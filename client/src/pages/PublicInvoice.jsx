@@ -96,6 +96,7 @@ export default function PublicInvoice() {
                   <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>วันที่</th>
                   <th style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>เล่ม/เลขที่</th>
                   <th style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>ทะเบียน</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>หมายเหตุ</th>
                   <th style={{ padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>ยอด (฿)</th>
                 </tr>
               </thead>
@@ -106,13 +107,14 @@ export default function PublicInvoice() {
                     <td style={{ padding: '8px 10px' }}>{b.date?.split('T')[0]}</td>
                     <td style={{ padding: '8px 10px', textAlign: 'center' }}>{b.bill_book}/{b.bill_number}</td>
                     <td style={{ padding: '8px 10px', textAlign: 'center' }}>{b.vehicle_number || '—'}</td>
+                    <td style={{ padding: '8px 10px', color: '#555' }}>{b.note || '—'}</td>
                     <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600 }}>฿{fmt(b.amount)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr style={{ background: '#f8f9fa' }}>
-                  <td colSpan={4} style={{ padding: '10px', textAlign: 'right', fontWeight: 600, borderTop: '2px solid #e5e7eb' }}>รวมทั้งสิ้น</td>
+                  <td colSpan={5} style={{ padding: '10px', textAlign: 'right', fontWeight: 600, borderTop: '2px solid #e5e7eb' }}>รวมทั้งสิ้น</td>
                   <td style={{ padding: '10px', textAlign: 'right', fontWeight: 700, fontSize: 15, color: '#d97706', borderTop: '2px solid #e5e7eb' }}>฿{fmt(invoice.total_amount)}</td>
                 </tr>
               </tfoot>
