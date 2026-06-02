@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการเงินเชื่อ - บีซี ปิโตรเลียม</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/mobile-fix.css">
+    <style>
+        /* Mobile-specific styles for Credit page - ENHANCED */
+        @media (max-width: 768px) {
+
+            /* Prevent horizontal scroll */
+            html,
+            body {
+                overflow-x: hidden !important;
+                max-width: 100vw !important;
+            }
+
+            /* .main-content handled by mobile-fix.css */
+
+            .card {
+                width: 100% !important;
+                overflow-x: auto !important;
+            }
+
+            /* Reduce ALL text sizes */
+            .stat-value {
+                font-size: 1.2rem !important;
+            }
+
+            .stat-label {
+                font-size: 0.75rem !important;
+            }
+
+            .stat-change {
+                font-size: 0.7rem !important;
+            }
+
+            /* Forms - force vertical */
+            .form-row {
+                flex-direction: column !important;
+                gap: 0.75rem !important;
+            }
+
+            .form-row .form-group {
+                width: 100% !important;
+                flex: none !important;
+            }
+
+            /* ALL flex containers wrap */
+            div[style*="flex"] {
+                flex-wrap: wrap !important;
+            }
+
+            /* Pagination wrap */
+            .pagination,
+            #paginationControls {
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+            }
+
+            .pagination-btn {
+                min-width: 26px !important;
+                height: 26px !important;
+                font-size: 0.7rem !important;
+                padding: 0.2rem !important;
+            }
+
+            /* Input - prevent zoom */
+            input,
+            select,
+            textarea {
+                font-size: 16px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            /* Buttons */
+            .btn {
+                padding: 0.6rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+        }
+
+        /* Larger checkboxes for better visibility */
+        .bill-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--primary-color, #3b82f6);
+        }
+
+        .bill-checkbox:hover {
+            transform: scale(1.1);
+        }
+
+        /* Invoice action buttons */
+        .invoice-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">BC PETROLEUM</div>
+                <div class="sidebar-subtitle">ระบบจัดการปั๊มน้ำมัน</div>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/index.html">
+                        <span class="sidebar-icon">📊</span>
+                        <span>แดชบอร์ด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/daily.html">
+                        <span class="sidebar-icon">📝</span>
+                        <span>จัดการรายวัน</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/credit.html" class="active">
+                        <span class="sidebar-icon">💳</span>
+                        <span>จัดการเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/customers.html">
+                        <span class="sidebar-icon">👥</span>
+                        <span>ลูกค้าเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/cash.html">
+                        <span class="sidebar-icon">💵</span>
+                        <span>จัดการเงินสด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/accounting.html">
+                        <span class="sidebar-icon">💰</span>
+                        <span>จัดการบัญชี</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/reports.html">
+                        <span class="sidebar-icon">📈</span>
+                        <span>รายงาน</span>
+                    </a>
+                </li>
+                <li style="margin-top: 2rem;">
+                    <a href="#" id="logoutBtn">
+                        <span class="sidebar-icon">🚪</span>
+                        <span>ออกจากระบบ</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="page-header">
+                <div class="header-left">
+                    <h1>จัดการเงินเชื่อ</h1>
+                    <p class="header-date" id="currentDate"></p>
+                </div>
+                <div class="header-user">
+                    <div class="user-info">
+                        <div class="user-name" id="userName">ผู้ใช้งาน</div>
+                        <div class="user-role" id="userRole">user</div>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">U</div>
+                </div>
+            </header>
+
+            <!-- Summary Stats -->
+            <div class="stats-grid" style="margin-bottom: 2rem;">
+                <div class="stat-card warning">
+                    <div class="stat-label">ยอดเงินเชื่อวันนี้</div>
+                    <div class="stat-value" id="todayTotal">฿0.00</div>
+                    <div class="stat-change" id="todayCount">0 รายการ</div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-label">ยอดค้างชำระทั้งหมด</div>
+                    <div class="stat-value" id="unpaidTotal">฿0.00</div>
+                    <div class="stat-change" id="unpaidCount">0 รายการ</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-label">ชำระแล้ว (เดือนนี้)</div>
+                    <div class="stat-value" id="paidTotal">฿0.00</div>
+                    <div class="stat-change" id="paidCount">0 รายการ</div>
+                </div>
+            </div>
+
+            <!-- Add Credit Sale Form -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title">เพิ่มรายการขายเชื่อ</h3>
+                </div>
+                <form id="creditForm">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">ลูกค้า *</label>
+                            <select id="customerId" class="form-select" required>
+                                <option value="">เลือกลูกค้า</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">เล่มที่ *</label>
+                            <input type="text" id="billBook" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">เลขที่ *</label>
+                            <input type="text" id="billNumber" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">ยอดเงิน (฿) *</label>
+                            <input type="number" id="amount" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">ทะเบียนรถ</label>
+                            <input type="text" id="vehicleNumber" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="note">หมายเหตุ</label>
+                            <input type="text" id="note" class="form-control">
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem;">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <span>✓</span>
+                            <span>บันทึกรายการ</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Today's Credit Sales -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title">รายการขายเชื่อวันนี้</h3>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>เวลา</th>
+                                <th>ลูกค้า</th>
+                                <th>เล่มที่-เลขที่</th>
+                                <th>ทะเบียนรถ</th>
+                                <th>ยอดเงิน</th>
+                                <th>สถานะ</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="todayListBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                    ไม่มีรายการขายเชื่อวันนี้
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- All Credit Sales with Filters -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">รายการขายเชื่อทั้งหมด</h3>
+                </div>
+
+                <!-- Filters -->
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">วันที่เริ่มต้น</label>
+                        <input type="date" id="filterStartDate" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">วันที่สิ้นสุด</label>
+                        <input type="date" id="filterEndDate" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ลูกค้า</label>
+                        <select id="filterCustomer" class="form-select">
+                            <option value="">ทั้งหมด</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">สถานะใบวางบิล</label>
+                        <select id="filterStatus" class="form-select">
+                            <option value="">ทั้งหมด</option>
+                            <option value="unpaired">🔴 ยังไม่ได้วางบิล</option>
+                            <option value="invoiced">🟡 วางบิลแล้ว</option>
+                            <option value="paid">🟢 จ่ายแล้ว</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    <button type="button" class="btn btn-primary" onclick="loadAllCredits()">
+                        <span>🔍</span>
+                        <span>ค้นหา</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearFilters()">
+                        <span>↺</span>
+                        <span>ล้างตัวกรอง</span>
+                    </button>
+                    <div style="border-left: 2px solid #ddd; height: 30px; margin: 0 0.5rem;"></div>
+                    <button type="button" id="selectAllBtn" class="btn btn-secondary" onclick="selectAllUnpaired()" disabled>
+                        <span>☑</span>
+                        <span>เลือกทั้งหมด (ยังไม่ได้วางบิล)</span>
+                    </button>
+                    <button type="button" id="clearSelectionBtn" class="btn btn-secondary" onclick="clearSelection()" disabled>
+                        <span>☐</span>
+                        <span>ยกเลิกการเลือก</span>
+                    </button>
+                    <button type="button" id="createInvoiceBtn" class="btn btn-success" onclick="createInvoice()" disabled>
+                        <span>📄</span>
+                        <span>สร้างใบวางบิล</span>
+                    </button>
+                    <span id="selectedCount" style="margin-left: 1rem; color: var(--text-muted);">เลือกแล้ว 0 รายการ</span>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 50px; text-align: center;">☑</th>
+                                <th>วันที่</th>
+                                <th>ลูกค้า</th>
+                                <th>เล่มที่-เลขที่</th>
+                                <th>ทะเบียนรถ</th>
+                                <th>ยอดเงิน</th>
+                                <th>สถานะใบวางบิล</th>
+                                <th>หมายเหตุ</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allListBody">
+                            <tr>
+                                <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                    กดค้นหาเพื่อแสดงรายการ
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination Controls -->
+                <div class="pagination-container"
+                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                    <div class="rows-per-page">
+                        <label>แสดงแถว:
+                            <select id="rowsPerPage" class="form-select"
+                                style="display: inline-block; width: auto; padding: 0.25rem 0.5rem;">
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </label>
+                        <span id="showingEntry"
+                            style="color: var(--text-muted); font-size: 0.9em; margin-left: 10px;"></span>
+                    </div>
+                    <div class="pagination" id="paginationControls" style="display: flex; gap: 0.5rem;">
+                        <!-- Buttons will be generated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="page-footer">
+                <p><strong>บีซี ปิโตรเลียม</strong> | 40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110 | โทร: 096-236-9153</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Modal Container -->
+    <div id="modal-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay"></div>
+
+    <script src="/js/utils.js?v=SUPER_FINAL"></script>
+    <script src="/js/credit.js?v=SUPER_FINAL"></script>
+    <script src="/js/mobile.js?v=SUPER_FINAL"></script>
+</body>
+
+</html>

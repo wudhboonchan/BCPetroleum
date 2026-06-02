@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แดชบอร์ด - บีซี ปิโตรเลียม</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/mobile-fix.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        /* Mobile-specific overrides for Dashboard */
+        @media (max-width: 768px) {
+
+            /* Adjust header layout */
+            .main-content {
+                padding-top: 4.5rem !important;
+                /* Space for user avatar at top */
+            }
+
+            .page-header {
+                position: relative;
+                /* For absolute child positioning */
+                padding-top: 1rem !important;
+            }
+
+            .header-left {
+                width: 100%;
+            }
+
+            .header-user {
+                /* Absolute positioning - at top-right but scrolls with page */
+                position: absolute !important;
+                top: 1rem;
+                right: 1rem;
+                z-index: 1000;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                padding: 0.5rem 0.75rem;
+                border-radius: 2rem;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                flex-direction: row !important;
+                gap: 0.5rem !important;
+                width: auto !important;
+                margin: 0 !important;
+            }
+
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
+            }
+
+            .user-info {
+                display: none;
+                /* Hide text, show only avatar on mobile */
+            }
+
+            /* Reduce stat card font sizes */
+            .stat-value {
+                font-size: 1.4rem !important;
+                /* Further reduced for mobile */
+            }
+
+
+            .stat-label {
+                font-size: 0.85rem !important;
+            }
+
+            .stat-change {
+                font-size: 0.75rem !important;
+            }
+
+            /* CRITICAL: Prevent horizontal overflow */
+            html,
+            body {
+                overflow-x: hidden !important;
+                max-width: 100vw !important;
+            }
+
+            .app-wrapper {
+                overflow-x: hidden !important;
+            }
+
+            /* Charts - force responsive */
+            canvas {
+                max-width: 100% !important;
+                width: 100% !important;
+                height: auto !important;
+            }
+
+            /* Chart containers */
+            .card {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: auto !important;
+            }
+
+            /* Stats grid already single column from global CSS */
+            .stats-grid {
+                width: 100% !important;
+            }
+
+            /* Ensure no element exceeds viewport */
+            * {
+                max-width: 100%;
+            }
+        }
+
+        /* Extra small screens - prevent chart border clipping */
+        @media (max-width: 420px) {
+
+            /* Increase padding for charts on very small screens */
+            #salesChart,
+            #fuelChart,
+            #nozzleChart {
+                margin-right: 8px !important;
+            }
+
+            /* Chart containers need more right padding */
+            .card>div[style*="padding"] {
+                padding-right: 1.5rem !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">BC PETROLEUM</div>
+                <div class="sidebar-subtitle">ระบบจัดการปั๊มน้ำมัน</div>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/" class="active">
+                        <span class="sidebar-icon">📊</span>
+                        <span>แดชบอร์ด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/daily.html">
+                        <span class="sidebar-icon">📝</span>
+                        <span>จัดการรายวัน</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/credit.html">
+                        <span class="sidebar-icon">💳</span>
+                        <span>จัดการเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/customers.html">
+                        <span class="sidebar-icon">👥</span>
+                        <span>ลูกค้าเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/cash.html">
+                        <span class="sidebar-icon">💵</span>
+                        <span>จัดการเงินสด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/accounting.html">
+                        <span class="sidebar-icon">💰</span>
+                        <span>จัดการบัญชี</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/reports.html">
+                        <span class="sidebar-icon">📈</span>
+                        <span>รายงาน</span>
+                    </a>
+                </li>
+                <li style="margin-top: 2rem;">
+                    <a href="#" id="logoutBtn">
+                        <span class="sidebar-icon">🚪</span>
+                        <span>ออกจากระบบ</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <header class="page-header">
+                <div class="header-left">
+                    <h1>แดชบอร์ด</h1>
+                    <div class="header-date" id="currentDate">กำลังโหลด...</div>
+                </div>
+                <div class="header-user">
+                    <div class="user-avatar" id="userAvatar">W</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">ผู้ใช้</div>
+                        <div class="user-role" id="userRole">User</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card success">
+                    <div class="stat-label">ยอดขายวันนี้</div>
+                    <div class="stat-value" id="totalSales">฿0.00</div>
+                    <div class="stat-change">
+                        <span>รวมทั้งหมด</span>
+                    </div>
+                </div>
+
+                <div class="stat-card info">
+                    <div class="stat-label">กำไรวันนี้</div>
+                    <div class="stat-value" id="totalProfit">฿0.00</div>
+                    <div class="stat-change">
+                        <span>กำไรสุทธิ</span>
+                    </div>
+                </div>
+
+                <div class="stat-card warning">
+                    <div class="stat-label">ปริมาณลิตร</div>
+                    <div class="stat-value" id="totalLiters">0.000</div>
+                    <div class="stat-change">
+                        <span>ลิตร</span>
+                    </div>
+                </div>
+
+                <div class="stat-card danger">
+                    <div class="stat-label">ยอดเงินขายเชื่อ</div>
+                    <div class="stat-value" id="totalCredit">฿0.00</div>
+                    <div class="stat-change">
+                        <span>คงค้าง</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Sales Chart -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">ยอดขาย 7 วันล่าสุด</h3>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Fuel Distribution -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">สัดส่วนยอดขายตามประเภทน้ำมัน</h3>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div style="height: 250px; position: relative; display: flex; justify-content: center;">
+                            <canvas id="fuelChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nozzle Performance -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">ยอดขายแต่ละหัวจ่าย (วันนี้)</h3>
+                </div>
+                <div style="max-width: 100%; overflow-x: auto;">
+                    <canvas id="nozzleChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="page-footer">
+                <p><strong>บีซี ปิโตรเลียม</strong></p>
+                <p>40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110 | โทร: 096-236-9153</p>
+            </footer>
+        </main>
+    </div>
+
+    <script src="/js/utils.js?v=SUPER_FINAL"></script>
+    <script>
+        // Check authentication
+        Auth.requireAuth();
+
+        // Register DataLabels plugin
+        if (typeof ChartDataLabels !== 'undefined') {
+            Chart.register(ChartDataLabels);
+        }
+
+        let salesChart, fuelChart, nozzleChart;
+
+        // Load user info
+        async function loadUserInfo() {
+            try {
+                const user = Auth.getCurrentUser();
+                if (user) {
+                    document.getElementById('userName').textContent = user.name || user.username;
+                    document.getElementById('userRole').textContent = user.role === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน';
+                    document.getElementById('userAvatar').textContent = user.name ? user.name[0].toUpperCase() : 'U';
+                }
+            } catch (error) {
+                console.error('Error loading user:', error);
+            }
+        }
+
+        // Update date
+        function updateDate() {
+            document.getElementById('currentDate').textContent = DateUtils.getThaiDate();
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                Loading.show();
+                const data = await API.get('/api/dashboard/summary');
+
+                // Update stats
+                document.getElementById('totalSales').textContent = '฿' + NumberUtils.formatCurrency(data.today.totalSales || 0);
+                document.getElementById('totalProfit').textContent = '฿' + NumberUtils.formatCurrency(data.today.totalProfit || 0);
+                document.getElementById('totalLiters').textContent = NumberUtils.formatLiters(data.today.totalLiters || 0);
+                document.getElementById('totalCredit').textContent = '฿' + NumberUtils.formatCurrency(data.totalCredit || 0);
+
+                // Update charts
+                updateSalesChart(data.last7Days || []);
+                updateFuelChart(data.today);
+                updateNozzleChart(data.today.nozzleData || Array(8).fill(0));
+
+                Loading.hide();
+            } catch (error) {
+                Loading.hide();
+                console.error('Error loading dashboard:', error);
+                Toast.error('ไม่สามารถโหลดข้อมูลได้');
+            }
+        }
+
+        // Update sales chart
+        function updateSalesChart(data) {
+            const ctx = document.getElementById('salesChart');
+
+            if (salesChart) {
+                salesChart.destroy();
+            }
+
+            const labels = data.map(d => {
+                const date = new Date(d.date);
+                return `${date.getDate()}/${date.getMonth() + 1}`;
+            });
+
+            const salesData = data.map(d => parseFloat(d.total_sales) || 0);
+
+            salesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'ยอดขาย (บาท)',
+                        data: salesData,
+                        borderColor: '#00A8E8',
+                        backgroundColor: 'rgba(0, 168, 232, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#00A8E8',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    layout: {
+                        padding: {
+                            top: 10,
+                            right: 15,
+                            bottom: 10,
+                            left: 10
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: 'Chakra Petch',
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(45, 62, 80, 0.9)',
+                            titleFont: {
+                                family: 'Chakra Petch',
+                                size: 14
+                            },
+                            bodyFont: {
+                                family: 'Chakra Petch',
+                                size: 13
+                            },
+                            padding: 12,
+                            borderColor: '#00A8E8',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function (context) {
+                                    return 'ยอดขาย: ฿' + NumberUtils.formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: {
+                                    family: 'Chakra Petch'
+                                },
+                                callback: function (value) {
+                                    return '฿' + NumberUtils.formatNumber(value);
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    family: 'Chakra Petch'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update fuel distribution chart
+        function updateFuelChart(data) {
+            const ctx = document.getElementById('fuelChart');
+
+            if (fuelChart) {
+                fuelChart.destroy();
+            }
+
+            fuelChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['เบนซิล E91', 'เบนซิล E95', 'ดีเซล B7'],
+                    datasets: [{
+                        data: [
+                            parseFloat(data.e91Sales) || 0,
+                            parseFloat(data.e95Sales) || 0,
+                            parseFloat(data.b7Sales) || 0
+                        ],
+                        // Custom data for labels
+                        liters: [
+                            parseFloat(data.e91Liters) || 0,
+                            parseFloat(data.e95Liters) || 0,
+                            parseFloat(data.b7Liters) || 0
+                        ],
+                        backgroundColor: [
+                            '#FF6B9D',
+                            '#4ECDC4',
+                            '#45B7D1'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 10,
+                            right: 15,
+                            bottom: 10,
+                            left: 10
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: {
+                                    family: 'Chakra Petch',
+                                    size: 11
+                                },
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                boxWidth: 8
+                            }
+                        },
+                        // Configure DataLabels
+                        datalabels: {
+                            color: 'white',
+                            font: {
+                                family: 'Chakra Petch',
+                                weight: 'bold',
+                                size: 14
+                            },
+                            formatter: function (value, context) {
+                                const liters = context.dataset.liters[context.dataIndex];
+                                if (liters > 0) {
+                                    return NumberUtils.formatLiters(liters) + '\nลิตร';
+                                } else {
+                                    return '';
+                                }
+                            },
+                            textAlign: 'center',
+                            textShadowColor: 'rgba(0,0,0,0.5)',
+                            textShadowBlur: 4
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(45, 62, 80, 0.9)',
+                            titleFont: { family: 'Chakra Petch', size: 14 },
+                            bodyFont: { family: 'Chakra Petch', size: 13 },
+                            padding: 12,
+                            callbacks: {
+                                label: function (context) {
+                                    const label = context.label || '';
+                                    const value = '฿' + NumberUtils.formatCurrency(context.parsed);
+                                    const liters = context.dataset.liters[context.dataIndex];
+                                    return [
+                                        label + ': ' + value,
+                                        'ปริมาณ: ' + NumberUtils.formatLiters(liters) + ' ลิตร'
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update nozzle performance chart
+        function updateNozzleChart(data) {
+            const ctx = document.getElementById('nozzleChart');
+
+            if (nozzleChart) {
+                nozzleChart.destroy();
+            }
+
+            const labels = [
+                'ตู้1-หัว1 (E91)',
+                'ตู้1-หัว2 (B7)',
+                'ตู้1-หัว3 (E91)',
+                'ตู้1-หัว4 (B7)',
+                'ตู้2-หัว1 (E95)',
+                'ตู้2-หัว2 (B7)',
+                'ตู้2-หัว3 (E95)',
+                'ตู้2-หัว4 (B7)'
+            ];
+
+            const colors = [
+                '#FF6B9D', // E91
+                '#45B7D1', // B7
+                '#FF6B9D', // E91
+                '#45B7D1', // B7
+                '#4ECDC4', // E95
+                '#45B7D1', // B7
+                '#4ECDC4', // E95
+                '#45B7D1'  // B7
+            ];
+
+            nozzleChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'ลิตร',
+                        data: data,
+                        backgroundColor: colors,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    layout: {
+                        padding: {
+                            top: 25 // Add space at top to prevent datalabel cutoff
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(45, 62, 80, 0.9)',
+                            titleFont: {
+                                family: 'Chakra Petch',
+                                size: 14
+                            },
+                            bodyFont: {
+                                family: 'Chakra Petch',
+                                size: 13
+                            },
+                            padding: 12,
+                            callbacks: {
+                                label: function (context) {
+                                    return 'ปริมาณ: ' + NumberUtils.formatLiters(context.parsed.y) + ' ลิตร';
+                                }
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#2c3e50',
+                            font: {
+                                family: 'Chakra Petch',
+                                size: 11,
+                                weight: 'bold'
+                            },
+                            formatter: function (value) {
+                                // ปัดเศษให้เหลือทศนิยม 1 ตำแหน่ง
+                                return value.toFixed(1);
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: {
+                                    family: 'Chakra Petch'
+                                },
+                                callback: function (value) {
+                                    return NumberUtils.formatNumber(value) + ' L';
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    family: 'Chakra Petch',
+                                    size: window.innerWidth <= 768 ? 9 : 10
+                                },
+                                color: '#2D3748', // Darker color for better readability
+                                maxRotation: window.innerWidth <= 768 ? 45 : 0, // Rotate on mobile
+                                minRotation: window.innerWidth <= 768 ? 45 : 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Logout handled by mobile.js (globally)
+
+        // Initialize
+        updateDate();
+        loadUserInfo();
+        loadDashboard();
+
+        // Refresh data every 5 minutes
+        setInterval(loadDashboard, 5 * 60 * 1000);
+    </script>
+    <script src="/js/mobile.js?v=SUPER_FINAL"></script>
+</body>
+
+</html>

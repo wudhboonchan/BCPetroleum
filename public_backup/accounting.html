@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการบัญชีรายรับรายจ่าย - บีซี ปิโตรเลียม</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/mobile-fix.css">
+    <style>
+        .balance-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .balance-card {
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .balance-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .balance-card.cash {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        }
+
+        .balance-card.profit {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        }
+
+        .balance-card.bank {
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        }
+
+        .balance-card.receivables {
+            background: linear-gradient(135deg, #EC4899 0%, #BE185D 100%);
+        }
+
+        .balance-card.payables {
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+        }
+
+        .balance-title {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .balance-amount {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .transaction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .quick-entry-card {
+            background: white;
+            border: 2px solid #E5E7EB;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quick-entry-card:hover {
+            border-color: #00A8E8;
+            box-shadow: 0 4px 12px rgba(0, 168, 232, 0.1);
+        }
+
+        .quick-entry-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quick-entry-title {
+            font-weight: 600;
+            color: #2D3E50;
+            margin-bottom: 0.25rem;
+        }
+
+        .quick-entry-desc {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .transaction-list-item {
+            background: white;
+            border: 1px solid #E5E7EB;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-amount {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .transaction-amount.income {
+            color: #10B981;
+        }
+
+        .transaction-amount.expense {
+            color: #EF4444;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 1rem;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-close:hover {
+            color: #000;
+        }
+
+        /* Custom Bootstrap Tooltip Styling */
+        .tooltip-inner {
+            background-color: #1F2937 !important; /* Darker Gray */
+            color: #FFFFFF !important;
+            font-size: 1.05rem !important; /* Increased from 0.95rem */
+            padding: 12px 18px !important; /* Increased padding */
+            border-radius: 8px !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2) !important;
+            max-width: 400px !important; /* Increased from 300px */
+            line-height: 1.5 !important; /* Better line spacing */
+        }
+
+        .tooltip.show {
+            opacity: 1 !important;
+        }
+
+        .bs-tooltip-top .tooltip-arrow::before, 
+        .bs-tooltip-auto[data-popper-placement^=top] .tooltip-arrow::before {
+            border-top-color: #1F2937 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">BC PETROLEUM</div>
+                <div class="sidebar-subtitle">ระบบจัดการปั๊มน้ำมัน</div>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/">
+                        <span class="sidebar-icon">📊</span>
+                        <span>แดชบอร์ด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/daily.html">
+                        <span class="sidebar-icon">📝</span>
+                        <span>จัดการรายวัน</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/credit.html">
+                        <span class="sidebar-icon">💳</span>
+                        <span>จัดการเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/customers.html">
+                        <span class="sidebar-icon">👥</span>
+                        <span>ลูกค้าเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/cash.html">
+                        <span class="sidebar-icon">💵</span>
+                        <span>จัดการเงินสด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/accounting.html" class="active">
+                        <span class="sidebar-icon">💰</span>
+                        <span>จัดการบัญชี</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/reports.html">
+                        <span class="sidebar-icon">📈</span>
+                        <span>รายงาน</span>
+                    </a>
+                </li>
+                <li style="margin-top: 2rem;">
+                    <a href="#" id="logoutBtn">
+                        <span class="sidebar-icon">🚪</span>
+                        <span>ออกจากระบบ</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-left">
+                    <h1>จัดการบัญชีรายรับรายจ่าย</h1>
+                    <div class="header-date" id="currentDate">กำลังโหลด...</div>
+                </div>
+                <div class="header-user">
+                    <div class="user-avatar" id="userAvatar">W</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">ผู้ใช้</div>
+                        <div class="user-role" id="userRole">User</div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Balance Cards -->
+            <div class="balance-cards">
+                <div class="balance-card cash" onclick="showAccountDetails('cash')">
+                    <div class="balance-title">💵 เงินสดหมุนเวียน</div>
+                    <div class="balance-amount" id="cashBalance">฿0.00</div>
+                </div>
+                <div class="balance-card profit" onclick="showAccountDetails('profit')">
+                    <div class="balance-title">💰 เงินกำไร</div>
+                    <div class="balance-amount" id="profitBalance">฿0.00</div>
+                </div>
+                <div class="balance-card bank" onclick="showAccountDetails('bank')">
+                    <div class="balance-title">🏦 บัญชีธนาคาร</div>
+                    <div class="balance-amount" id="bankBalance">฿0.00</div>
+                </div>
+                <div class="balance-card receivables" onclick="showReceivablesDetails()">
+                    <div class="balance-title">📥 เป็นลูกหนี้</div>
+                    <div class="balance-amount" id="receivablesBalance">฿0.00</div>
+                </div>
+                <div class="balance-card payables" onclick="showPayablesDetails()">
+                    <div class="balance-title">📤 เป็นเจ้าหนี้</div>
+                    <div class="balance-amount" id="payablesBalance">฿0.00</div>
+                </div>
+            </div>
+            
+            
+            <!-- Date Selector -->
+            <div style="margin-bottom: 2rem;">
+                <label class="form-label">เลือกวันที่</label>
+                <input type="date" class="form-control" id="selectedDate" style="max-width: 250px;">
+            </div>
+           
+
+            <!-- Quick Entry Cards -->
+            <div class="card">
+                <h2>เพิ่มรายการธุรกรรม</h2>
+                <div class="transaction-grid">
+                    <div class="quick-entry-card" onclick="openModal('fuelInvestment')">
+                        <div class="quick-entry-icon">⛽</div>
+                        <div class="quick-entry-title">การลงทุนน้ำมัน</div>
+                        <div class="quick-entry-desc">บันทึกการซื้อน้ำมัน</div>
+                    </div>
+                    <div class="quick-entry-card" onclick="openModal('depositBank')">
+                        <div class="quick-entry-icon">💸</div>
+                        <div class="quick-entry-title">ฝากเงินธนาคาร</div>
+                        <div class="quick-entry-desc">โอนจากเงินสดไปธนาคาร</div>
+                    </div>
+                    <div class="quick-entry-card" onclick="openModal('electricity')">
+                        <div class="quick-entry-icon">💡</div>
+                        <div class="quick-entry-title">ค่าไฟฟ้า</div>
+                        <div class="quick-entry-desc">หักจากเงินสดหมุนเวียน</div>
+                    </div>
+                    <div class="quick-entry-card" onclick="openModal('waterPurchase')">
+                        <div class="quick-entry-icon">💧</div>
+                        <div class="quick-entry-title">น้ำดื่มสมนาคุณ</div>
+                        <div class="quick-entry-desc">บันทึกเป็นลูกหนี้</div>
+                    </div>
+                    <div class="quick-entry-card" onclick="openModal('debtPayment')">
+                        <div class="quick-entry-icon">💸</div>
+                        <div class="quick-entry-title">ชำระหนี้</div>
+                        <div class="quick-entry-desc">จ่ายค่าน้ำมัน/น้ำดื่ม</div>
+                    </div>
+                    <div class="quick-entry-card" onclick="openModal('other')">
+                        <div class="quick-entry-icon">📝</div>
+                        <div class="quick-entry-title">รายการอื่นๆ</div>
+                        <div class="quick-entry-desc">รายรับ/รายจ่ายอื่นๆ</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions List -->
+            <div class="card" style="margin-top: 2rem;">
+                <h2 id="transactionsTitle">รายการธุรกรรมวันนี้</h2>
+                <div id="transactionsList"></div>
+            </div>
+
+            <footer class="page-footer">
+                <p><strong>บีซี ปิโตรเลียม</strong></p>
+                <p>40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110 | โทร: 096-236-9153</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Fuel Investment Modal -->
+    <div id="fuelInvestmentModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('fuelInvestment')">&times;</span>
+            <h2>⛽ การลงทุนน้ำมัน</h2>
+            <div class="form-group">
+                <label class="form-label">ประเภทน้ำมัน</label>
+                <select class="form-control" id="fuelType">
+                    <option value="e91">แก๊สโซฮอล์ 91</option>
+                    <option value="e95">แก๊สโซฮอล์ 95</option>
+                    <option value="b7">ดีเซล B7</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนลิตร</label>
+                <input type="number" class="form-control" id="fuelLiters" step="0.001" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงินรวม (บาท)</label>
+                <input type="number" class="form-control" id="fuelTotalAmount" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">สถานะการจ่ายเงิน</label>
+                <select class="form-control" id="fuelPaymentStatus" onchange="toggleFuelPaymentMethod()">
+                    <option value="unpaid">ยังไม่ได้จ่าย</option>
+                    <option value="paid">จ่ายแล้ว</option>
+                </select>
+            </div>
+            <div class="form-group" id="fuelPaymentMethodGroup" style="display: none;">
+                <label class="form-label">วิธีจ่ายเงิน</label>
+                <select class="form-control" id="fuelPaymentMethod">
+                    <option value="cash">เงินสด</option>
+                    <option value="transfer">โอนธนาคาร</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="saveFuelInvestment()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Deposit to Bank Modal -->
+    <div id="depositBankModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('depositBank')">&times;</span>
+            <h2>💸 ฝากเงินธนาคาร</h2>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงิน (บาท)</label>
+                <input type="number" class="form-control" id="depositAmount" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+                <input type="text" class="form-control" id="depositNote">
+            </div>
+            <button class="btn btn-primary" onclick="saveDeposit()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Electricity Modal -->
+    <div id="electricityModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('electricity')">&times;</span>
+            <h2>💡 ค่าไฟฟ้า</h2>
+            <div class="form-group">
+                <label class="form-label">ประจำเดือน</label>
+                <select class="form-control" id="electricityMonth">
+                    <option value="มกราคม">มกราคม</option>
+                    <option value="กุมภาพันธ์">กุมภาพันธ์</option>
+                    <option value="มีนาคม">มีนาคม</option>
+                    <option value="เมษายน">เมษายน</option>
+                    <option value="พฤษภาคม">พฤษภาคม</option>
+                    <option value="มิถุนายน">มิถุนายน</option>
+                    <option value="กรกฎาคม">กรกฎาคม</option>
+                    <option value="สิงหาคม">สิงหาคม</option>
+                    <option value="กันยายน">กันยายน</option>
+                    <option value="ตุลาคม">ตุลาคม</option>
+                    <option value="พฤศจิกายน">พฤศจิกายน</option>
+                    <option value="ธันวาคม">ธันวาคม</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงิน (บาท)</label>
+                <input type="number" class="form-control" id="electricityAmount" step="0.01" min="0">
+            </div>
+            <button class="btn btn-primary" onclick="saveElectricity()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Water Purchase Modal -->
+    <div id="waterPurchaseModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('waterPurchase')">&times;</span>
+            <h2>💧 น้ำดื่มสมนาคุณ</h2>
+            <div class="form-group">
+                <label class="form-label">จำนวนแพค</label>
+                <input type="number" class="form-control" id="waterPacks" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">ราคาต่อแพค (บาท)</label>
+                <input type="number" class="form-control" id="waterCostPerPack" step="0.01" value="60">
+            </div>
+            <button class="btn btn-primary" onclick="saveWaterPurchase()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Account Details Modal (for Cash, Profit, Bank) -->
+    <div id="accountDetailsModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="modal-close" onclick="closeModal('accountDetails')">&times;</span>
+            <h2 id="accountDetailsTitle">รายละเอียดบัญชี</h2>
+            <div style="max-height: 500px; overflow-y: auto;">
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #F3F4F6;">
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #E5E7EB;">วันที่</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #E5E7EB;">รายละเอียด</th>
+                            <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #E5E7EB;">เดบิต</th>
+                            <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #E5E7EB;">เครดิต</th>
+                            <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #E5E7EB;">ยอดคงเหลือ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountDetailsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receivables/Payables Modal (4 columns) -->
+    <div id="debtDetailsModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="modal-close" onclick="closeModal('debtDetails')">&times;</span>
+            <h2 id="debtDetailsTitle">รายละเอียด</h2>
+            <div style="max-height: 500px; overflow-y: auto;">
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #F3F4F6;">
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #E5E7EB;">วันที่</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #E5E7EB;">รายละเอียด</th>
+                            <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #E5E7EB;">จำนวนเงิน</th>
+                            <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #E5E7EB;">สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="debtDetailsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profit Transfer Modal -->
+    <div id="profitTransferModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('profitTransfer')">&times;</span>
+            <h2>💎 หักเก็บกำไร</h2>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงิน (บาท)</label>
+                <input type="number" class="form-control" id="profitTransferAmount" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+                <input type="text" class="form-control" id="profitTransferNote">
+            </div>
+            <button class="btn btn-primary" onclick="saveProfitTransfer()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Debt Payment Modal -->
+    <div id="debtPaymentModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('debtPayment')">&times;</span>
+            <h2>💸 ชำระหนี้</h2>
+            <div class="form-group">
+                <label class="form-label">ประเภทหนี้</label>
+                <select class="form-control" id="debtType" onchange="loadDebtItems()">
+                    <option value="">-- เลือกประเภทหนี้ --</option>
+                    <option value="fuel">ค่าน้ำมัน</option>
+                    <option value="water">ค่าน้ำดื่ม</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">เลือกรายการหนี้</label>
+                <select class="form-control" id="debtItem">
+                    <option value="">-- เลือกรายการ --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงิน (บาท)</label>
+                <input type="number" class="form-control" id="debtPaymentAmount" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">ชำระจากบัญชี</label>
+                <select class="form-control" id="debtPaymentAccount">
+                    <option value="cash">เงินสด</option>
+                    <option value="bank">ธนาคาร</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+                <input type="text" class="form-control" id="debtPaymentNote">
+            </div>
+            <button class="btn btn-primary" onclick="saveDebtPayment()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Other Transaction Modal -->
+    <div id="otherModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('other')">&times;</span>
+            <h2>📝 รายการอื่นๆ</h2>
+            <div class="form-group">
+                <label class="form-label">ประเภท</label>
+                <select class="form-control" id="otherType">
+                    <option value="income">รายรับอื่นๆ</option>
+                    <option value="expense">รายจ่ายอื่นๆ</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">บัญชีที่เกี่ยวข้อง</label>
+                <select class="form-control" id="otherAccount">
+                    <option value="cash">เงินสดหมุนเวียน</option>
+                    <option value="profit">เงินกำไร</option>
+                    <option value="bank">บัญชีธนาคาร</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">รายละเอียด</label>
+                <input type="text" class="form-control" id="otherDescription">
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงิน (บาท)</label>
+                <input type="number" class="form-control" id="otherAmount" step="0.01" min="0">
+            </div>
+            <button class="btn btn-primary" onclick="saveOther()">บันทึก</button>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/accounting.js"></script>
+    <script src="/js/mobile.js"></script>
+</body>
+
+</html>

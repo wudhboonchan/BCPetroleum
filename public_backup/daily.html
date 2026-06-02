@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการรายวัน - บีซี ปิโตรเลียม</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .nozzle-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .nozzle-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-left: 6px solid;
+        }
+
+        .nozzle-card.e91 {
+            border-left-color: #FF6B9D;
+        }
+
+        .nozzle-card.e95 {
+            border-left-color: #4ECDC4;
+        }
+
+        .nozzle-card.b7 {
+            border-left-color: #45B7D1;
+        }
+
+        .nozzle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .nozzle-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .nozzle-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .nozzle-badge.e91 {
+            background: #FF6B9D;
+        }
+
+        .nozzle-badge.e95 {
+            background: #4ECDC4;
+        }
+
+        .nozzle-badge.b7 {
+            background: #45B7D1;
+        }
+
+        .meter-input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .meter-field {
+            position: relative;
+        }
+
+        .meter-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .meter-value {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .price-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 2px solid #e9ecef;
+        }
+
+        .price-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .price-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border-left: 4px solid;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .price-card.e91 {
+            border-left-color: #FF6B9D;
+        }
+
+        .price-card.e95 {
+            border-left-color: #4ECDC4;
+        }
+
+        .price-card.b7 {
+            border-left-color: #45B7D1;
+        }
+
+        .summary-section {
+            background: linear-gradient(135deg, #2D3E50 0%, #1A2530 100%);
+            color: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .summary-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .fuel-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .fuel-breakdown-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- Sidebar (same as index.html) -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">BC PETROLEUM</div>
+                <div class="sidebar-subtitle">ระบบจัดการปั๊มน้ำมัน</div>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li><a href="/"><span class="sidebar-icon">📊</span><span>แดชบอร์ด</span></a></li>
+                <li><a href="/daily.html" class="active"><span
+                            class="sidebar-icon">📝</span><span>จัดการรายวัน</span></a>
+                </li>
+                <li><a href="/credit.html"><span class="sidebar-icon">💳</span><span>จัดการเงินเชื่อ</span></a></li>
+                <li><a href="/customers.html"><span class="sidebar-icon">👥</span><span>ลูกค้าเงินเชื่อ</span></a></li>
+                <li><a href="/cash.html"><span class="sidebar-icon">💵</span><span>จัดการเงินสด</span></a></li>
+                <li><a href="/accounting.html"><span class="sidebar-icon">💰</span><span>จัดการบัญชี</span></a></li>
+                <li><a href="/reports.html"><span class="sidebar-icon">📈</span><span>รายงาน</span></a></li>
+                <li style="margin-top: 2rem;">
+                    <a href="#" id="logoutBtn"><span class="sidebar-icon">🚪</span><span>ออกจากระบบ</span></a>
+                </li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-left">
+                    <h1>จัดการรายวัน</h1>
+                    <div class="header-date" id="currentDate"></div>
+                </div>
+                <div class="header-user">
+                    <div class="user-avatar" id="userAvatar">W</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">ผู้ใช้</div>
+                        <div class="user-role" id="userRole">User</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Price Section -->
+            <div class="price-section">
+                <h3 style="margin-bottom: 1.5rem;">ราคาน้ำมันวันนี้</h3>
+                <form id="priceForm">
+                    <div class="price-grid">
+                        <!-- B7 -->
+                        <div class="price-card b7">
+                            <h4 style="margin-bottom: 1rem; color: #45B7D1;">ดีเซล B7</h4>
+                            <div class="form-group">
+                                <label class="form-label">ราคาต้นทุน (บาท/ลิตร)</label>
+                                <input type="number" class="form-control" id="b7CostPrice" step="0.01" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">ราคาขาย (บาท/ลิตร)</label>
+                                <input type="number" class="form-control" id="b7SellPrice" step="0.01" required>
+                            </div>
+                        </div>
+
+                        <!-- E91 -->
+                        <div class="price-card e91">
+                            <h4 style="margin-bottom: 1rem; color: #FF6B9D;">เบนซิล E91</h4>
+                            <div class="form-group">
+                                <label class="form-label">ราคาต้นทุน (บาท/ลิตร)</label>
+                                <input type="number" class="form-control" id="e91CostPrice" step="0.01" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">ราคาขาย (บาท/ลิตร)</label>
+                                <input type="number" class="form-control" id="e91SellPrice" step="0.01" required>
+                            </div>
+                        </div>
+
+                        <!-- E95 -->
+                        <div class="price-card e95">
+                            <h4 style="margin-bottom: 1rem; color: #4ECDC4;">เบนซิล E95</h4>
+                            <div class="form-group">
+                                <label class="form-label">ราคาต้นทุน (บาท/ลิตร)</label>
+                                <input type="number" class="form-control" id="e95CostPrice" step="0.01" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">ราคาขาย (บาท/ลิตร)</label>
+                                <input type="number" class="form-control" id="e95SellPrice" step="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Meter Readings -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title">เลขมิเตอร์หัวจ่าย</h3>
+                </div>
+
+                <form id="meterForm">
+                    <!-- Pump 1 -->
+                    <h4 style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e9ecef;">
+                        ตู้จ่ายที่ 1</h4>
+                    <div class="nozzle-grid">
+                        <!-- Pump 1 - Nozzle 1 (E91) -->
+                        <div class="nozzle-card e91">
+                            <div class="nozzle-header">
+                                <span class="nozzle-title">หัวจ่ายที่ 1</span>
+                                <span class="nozzle-badge e91">E91</span>
+                            </div>
+                            <div class="meter-input-group">
+                                <div class="meter-field">
+                                    <label class="meter-label">เมื่อวาน</label>
+                                    <div class="meter-value" id="nozzle1Yesterday">0.000</div>
+                                    <input type="hidden" id="nozzle1YesterdayInput">
+                                </div>
+                                <div class="meter-field">
+                                    <label class="meter-label">วันนี้</label>
+                                    <input type="number" class="form-control" id="nozzle1Today" step="0.001" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pump 1 - Nozzle 2 (B7) -->
+                        <div class="nozzle-card b7">
+                            <div class="nozzle-header">
+                                <span class="nozzle-title">หัวจ่ายที่ 2</span>
+                                <span class="nozzle-badge b7">B7</span>
+                            </div>
+                            <div class="meter-input-group">
+                                <div class="meter-field">
+                                    <label class="meter-label">เมื่อวาน</label>
+                                    <div class="meter-value" id="nozzle2Yesterday">0.000</div>
+                                    <input type="hidden" id="nozzle2YesterdayInput">
+                                </div>
+                                <div class="meter-field">
+                                    <label class="meter-label">วันนี้</label>
+                                    <input type="number" class="form-control" id="nozzle2Today" step="0.001" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pump 1 - Nozzle 3 (E91) -->
+                        <div class="nozzle-card e91">
+                            <div class="nozzle-header">
+                                <span class="nozzle-title">หัวจ่ายที่ 3</span>
+                                <span class="nozzle-badge e91">E91</span>
+                            </div>
+                            <div class="meter-input-group">
+                                <div class="meter-field">
+                                    <label class="meter-label">เมื่อวาน</label>
+                                    <div class="meter-value" id="nozzle3Yesterday">0.000</div>
+                                    <input type="hidden" id="nozzle3YesterdayInput">
+                                </div>
+                                <div class="meter-field">
+                                    <label class="meter-label">วันนี้</label>
+                                    <input type="number" class="form-control" id="nozzle3Today" step="0.001" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pump 1 - Nozzle 4 (B7) -->
+                        <div class="nozzle-card b7">
+                            <div class="nozzle-header">
+                                <span class="nozzle-title">หัวจ่ายที่ 4</span>
+                                <span class="nozzle-badge b7">B7</span>
+                            </div>
+                            <div class="meter-input-group">
+                                <div class="meter-field">
+                                    <label class="meter-label">เมื่อวาน</label>
+                                    <div class="meter-value" id="nozzle4Yesterday">0.000</div>
+                                    <input type="hidden" id="nozzle4YesterdayInput">
+                                </div>
+                                <div class="meter-field">
+                                    <label class="meter-label">วันนี้</label>
+                                    <input type="number" class="form-control" id="nozzle4Today" step="0.001" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pump 2 -->
+                    <h4 style="margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e9ecef;">
+                        ตู้จ่ายที่ 2</h4>
+                    <div class="nozzle-grid">
+                        <!-- Pump 2 - Nozzle 1 (E95) -->
+                        <div class="nozzle-card e95">
+                            <div class="nozzle-header">
+                                <span class="nozzle-title">หัวจ่ายที่ 1</span>
+                                <span class="nozzle-badge e95">E95</span>
+                            </div>
+                            <div class="meter-input-group">
+                                <div class="meter-field">
+                                    <label class="meter-label">เมื่อวาน</label>
+                                    <div class="meter-value" id="nozzle5Yesterday">0.000</div>
+                                    <input type="hidden" id="nozzle5YesterdayInput">
+                                </div>
+                                <div class="meter-field">
+                                    <label class="meter-label">วันนี้</label>
+                                    <input type="number" class="form-control" id="nozzle5Today" step="0.001" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pump 2 - Nozzle 2 (B7) -->
+                        <div class="nozzle-card b7">
+                            <div class="nozzle-header">
+                                <span class="nozzle-title">หัวจ่ายที่ 2</span>
+                                <span class="nozzle-badge b7">B7</span>
+                            </div>
+                            <div class="meter-input-group">
+                                <div class="meter-field">
+                                    <label class="meter-label">เมื่อวาน</label>
+                                    <div class="meter-value" id="nozzle6Yesterday">0.000</div>
+                                    <input type="hidden" id="nozzle6YesterdayInput">
+                                </div>
+                                <div class="meter-field">
+                                    <label class="meter-label">วันนี้</label>
+                                    <input type="number" class="form-control" id="nozzle6Today" step="0.001" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pump 2 - Nozzle 3 (E95) -->
+                        <div class="nozzle-card e95">
+                            <div class="nozzle-header">
+                                <span class="nozzle-title">หัวจ่ายที่ 3</span>
+                                <span class="nozzle-badge e95">E95</span>
+                            </div>
+                            <div class="meter-input-group">
+                                <div class="meter-field">
+                                    <label class="meter-label">เมื่อวาน</label>
+                                    <div class="meter-value" id="nozzle7Yesterday">0.000</div>
+                                    <input type="hidden" id="nozzle7YesterdayInput">
+                                </div>
+                                <div class="meter-field">
+                                    <label class="meter-label">วันนี้</label>
+                                    <input type="number" class="form-control" id="nozzle7Today" step="0.001" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pump 2 - Nozzle 4 (B7) -->
+                        <div class="nozzle-card b7">
+                            <div class="nozzle-header">
+                                <span class="nozzle-title">หัวจ่ายที่ 4</span>
+                                <span class="nozzle-badge b7">B7</span>
+                            </div>
+                            <div class="meter-input-group">
+                                <div class="meter-field">
+                                    <label class="meter-label">เมื่อวาน</label>
+                                    <div class="meter-value" id="nozzle8Yesterday">0.000</div>
+                                    <input type="hidden" id="nozzle8YesterdayInput">
+                                </div>
+                                <div class="meter-field">
+                                    <label class="meter-label">วันนี้</label>
+                                    <input type="number" class="form-control" id="nozzle8Today" step="0.001" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-lg" style="width: 100%; margin-top: 2rem;">
+                        ✓ ยืนยันส่งข้อมูล
+                    </button>
+                </form>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="summary-section" id="summarySection" style="display: none;">
+                <h3 style="margin-bottom: 0.5rem;">สรุปยอดขายวันนี้</h3>
+                <p style="opacity: 0.8; margin-bottom: 1.5rem;">ข้อมูลจากการคำนวณอัตโนมัติ</p>
+
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-label">ยอดขายทั้งหมด</div>
+                        <div class="summary-value" id="summaryTotalSales">฿0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">กำไรทั้งหมด</div>
+                        <div class="summary-value" id="summaryTotalProfit">฿0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">จำนวนลิตรรวม</div>
+                        <div class="summary-value" id="summaryTotalLiters">0.000 L</div>
+                    </div>
+                </div>
+
+                <h4 style="margin-top: 2rem; margin-bottom: 1rem;">รายละเอียดตามประเภทน้ำมัน</h4>
+                <div class="fuel-breakdown" id="fuelBreakdown"></div>
+
+                <h4 style="margin-top: 2rem; margin-bottom: 1rem;">จำนวนลิตรแต่ละหัวจ่าย</h4>
+                <div class="fuel-breakdown" id="nozzleBreakdown"></div>
+            </div>
+
+            <footer class="page-footer">
+                <p><strong>บีซี ปิโตรเลียม</strong></p>
+                <p>40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110 | โทร: 096-236-9153</p>
+            </footer>
+        </main>
+    </div>
+
+    <script src="/js/utils.js?v=SUPER_FINAL"></script>
+    <script src="/js/daily.js"></script>
+    <script src="/js/mobile.js?v=SUPER_FINAL"></script>
+</body>
+
+</html>

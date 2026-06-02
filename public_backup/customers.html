@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการลูกค้าสินเชื่อ - บีซี ปิโตรเลียม</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/mobile-fix.css">
+    <style>
+        /* Mobile-specific styles for Customers page */
+        @media (max-width: 768px) {
+
+            /* Action bar - stack buttons */
+            .actions-bar {
+                flex-direction: column !important;
+                gap: 1rem !important;
+            }
+
+            .actions-bar>* {
+                width: 100% !important;
+            }
+
+            /* Search input */
+            #searchInput {
+                min-width: 100% !important;
+                font-size: 16px;
+                /* Prevent zoom on iOS */
+            }
+
+            /* Table action buttons - smaller icons */
+            .action-buttons .btn {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.85rem;
+            }
+
+            /* Invoice modal - full width on mobile */
+            #invoiceModal .modal-dialog {
+                max-width: 100vw !important;
+                width: 100vw !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            /* Print container scrollable */
+            #printContainer {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-dialog {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        @media print {
+
+            /* Reset Page */
+            @page {
+                size: A4;
+                margin: 10mm 10mm 20mm 10mm;
+                /* Top Right Bottom Left */
+            }
+
+            html,
+            body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            /* Table Printing Logic */
+            table {
+                page-break-inside: auto;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            tfoot {
+                display: table-footer-group;
+            }
+
+            /* Hide everything */
+            body * {
+                visibility: hidden;
+            }
+
+            /* Target Invoice Content Directly */
+            #invoiceModal {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                background: white !important;
+                display: block !important;
+                overflow: visible !important;
+                /* Allow content to flow */
+                visibility: visible;
+                z-index: 9999;
+            }
+
+            .modal-dialog {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                background: white !important;
+                box-shadow: none !important;
+                visibility: visible;
+            }
+
+            /* Hide Toolbar in Print */
+            .modal-dialog>div:first-child {
+                display: none !important;
+            }
+
+            /* Ensure Content Shows */
+            #invoiceContent {
+                visibility: visible;
+                width: 100% !important;
+                /* Use available width */
+                min-height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                /* Managed by @page margin */
+                box-shadow: none !important;
+            }
+
+            #invoiceContent * {
+                visibility: visible;
+            }
+        }
+
+        /* Fix SweetAlert2 Z-Index */
+        .swal2-container {
+            z-index: 20000 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">BC PETROLEUM</div>
+                <div class="sidebar-subtitle">ระบบจัดการปั๊มน้ำมัน</div>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/">
+                        <span class="sidebar-icon">📊</span>
+                        <span>แดชบอร์ด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/daily.html">
+                        <span class="sidebar-icon">📝</span>
+                        <span>จัดการรายวัน</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/credit.html">
+                        <span class="sidebar-icon">💳</span>
+                        <span>จัดการเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/customers.html" class="active">
+                        <span class="sidebar-icon">👥</span>
+                        <span>ลูกค้าเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/cash.html">
+                        <span class="sidebar-icon">💵</span>
+                        <span>จัดการเงินสด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/accounting.html">
+                        <span class="sidebar-icon">💰</span>
+                        <span>จัดการบัญชี</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/reports.html">
+                        <span class="sidebar-icon">📈</span>
+                        <span>รายงาน</span>
+                    </a>
+                </li>
+                <li style="margin-top: 2rem;">
+                    <a href="#" id="logoutBtn">
+                        <span class="sidebar-icon">🚪</span>
+                        <span>ออกจากระบบ</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-left">
+                    <h1>จัดการลูกค้าสินเชื่อ</h1>
+                    <div class="header-date" id="currentDate">กำลังโหลด...</div>
+                </div>
+                <div class="header-user">
+                    <div class="user-avatar" id="userAvatar">W</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">ผู้ใช้</div>
+                        <div class="user-role" id="userRole">User</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Actions Bar -->
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                <button class="btn btn-primary btn-lg" onclick="openAddCustomerModal()">
+                    + เพิ่มลูกค้าใหม่
+                </button>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <input type="text" id="searchInput" class="form-control"
+                        placeholder="ค้นหาชื่อลูกค้า หรือ เบอร์โทร..." style="min-width: 250px;">
+                </div>
+            </div>
+
+            <!-- Customers Table -->
+            <div class="card">
+                <div class="table-container" style="margin-top: 0;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>รหัส</th>
+                                <th>ชื่อลูกค้า</th>
+                                <th>เบอร์โทร</th>
+                                <th>ผู้ติดต่อ</th>
+                                <th>ยอดค้างชำระ</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customerListBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                    กำลังโหลดข้อมูล...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <footer class="page-footer">
+                <p><strong>บีซี ปิโตรเลียม</strong></p>
+                <p>40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110 | โทร: 096-236-9153</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Invoice Preview Modal -->
+    <div class="modal-overlay" id="invoiceModal"
+        style="display: none; align-items: flex-start; padding-top: 2rem; overflow-y: auto;">
+        <div class="modal-dialog"
+            style="max-width: 215mm; width: 100%; padding: 0; background: #525659; overflow: visible;">
+            <!-- Toolbar -->
+            <div
+                style="background: #333; padding: 1rem; color: white; display: flex; justify-content: space-between; align-items: center; border-radius: 1rem 1rem 0 0;">
+                <h3 style="margin: 0; font-size: 1.1rem;">ตัวอย่างใบวางบิล</h3>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary" onclick="printInvoice()">🖨️ พิมพ์ / บันทึก PDF</button>
+                    <button class="btn btn-secondary" onclick="closeInvoiceModal()">ปิด</button>
+                </div>
+            </div>
+
+            <!-- Print Container (Holds multiple A4 pages) -->
+            <div id="printContainer" style="background: #525659; padding-bottom: 2rem;">
+                <!-- Pages will be injected here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Styles -->
+    <style>
+        /* Invoice Page Style (Screen) */
+        .invoice-page {
+            width: 210mm;
+            min-height: 297mm;
+            /* Screen view */
+            background: white;
+            margin: 1rem auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            box-sizing: border-box;
+            color: black;
+            font-family: 'Sarabun', sans-serif;
+            overflow: hidden;
+            /* Cut off overflow */
+        }
+
+        /* Minimal Print Reset (All magic is in JS now) */
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+
+    <!-- Modals Container -->
+    <div id="modalContainer"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/utils.js?v=SUPER_FINAL"></script>
+    <script src="/js/customers.js"></script>
+    <script src="/js/mobile.js?v=SUPER_FINAL"></script>
+</body>
+
+</html>

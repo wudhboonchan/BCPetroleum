@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบ - บีซี ปิโตรเลียม</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .login-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #2D3E50 0%, #1A2530 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-wrapper::before {
+      content: '';
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(0, 168, 232, 0.3), transparent);
+      top: -200px;
+      right: -200px;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .login-wrapper::after {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(123, 104, 238, 0.2), transparent);
+      bottom: -150px;
+      left: -150px;
+      animation: float 8s ease-in-out infinite reverse;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(-20px) translateX(20px); }
+    }
+
+    .login-card {
+      background: white;
+      border-radius: 1.5rem;
+      padding: 3rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 90%;
+      max-width: 450px;
+      position: relative;
+      z-index: 1;
+      animation: slideUp 0.5s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .login-logo {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00A8E8, #7B68EE);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .login-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .login-form {
+      margin-top: 2rem;
+    }
+
+    .login-footer {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .welcome-message {
+      background: linear-gradient(135deg, rgba(0, 168, 232, 0.1), rgba(123, 104, 238, 0.1));
+      padding: 1rem;
+      border-radius: 0.75rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="login-header">
+        <h1 class="login-logo">BC PETROLEUM</h1>
+        <p class="login-subtitle">ระบบจัดการปั๊มน้ำมัน</p>
+      </div>
+
+      <div class="welcome-message">
+        <strong>ยินดีต้อนรับ</strong><br>
+        กรุณาเข้าสู่ระบบเพื่อใช้งาน
+      </div>
+
+      <form class="login-form" id="loginForm">
+        <div class="form-group">
+          <label class="form-label">ชื่อผู้ใช้</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            id="username" 
+            placeholder="กรอกชื่อผู้ใช้"
+            required
+            autocomplete="username"
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">รหัสผ่าน</label>
+          <input 
+            type="password" 
+            class="form-control" 
+            id="password" 
+            placeholder="กรอกรหัสผ่าน"
+            required
+            autocomplete="current-password"
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <p>บีซี ปิโตรเลียม<br>
+        40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110<br>
+        โทร: 096-236-9153</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/utils.js"></script>
+  <script>
+    // NUCLEAR OPTION: Force clear everything if ?logout=true
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('logout') === 'true') {
+      localStorage.clear();
+      sessionStorage.clear();
+      // Optional: Clear history to prevent back button
+      window.history.replaceState(null, null, window.location.pathname);
+    }
+
+    // Check if already logged in
+    if (Auth.isAuthenticated()) {
+      window.location.href = '/';
+    }
+
+    const loginForm = document.getElementById('loginForm');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!username || !password) {
+        Toast.error('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+        return;
+      }
+
+      Loading.show();
+
+      try {
+        const data = await Auth.login(username, password);
+        
+        if (data.success) {
+          Toast.success('เข้าสู่ระบบสำเร็จ');
+          
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 500);
+        }
+      } catch (error) {
+        Loading.hide();
+        Toast.error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+        passwordInput.value = '';
+        passwordInput.focus();
+      }
+    });
+
+    // Add enter key support
+    usernameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        passwordInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการเงินสดประจำวัน - บีซี ปิโตรเลียม</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/mobile-fix.css">
+    <style>
+        .cash-counter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .denomination-item {
+            background: white;
+            border: 2px solid #E3F2FD;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .denomination-item:hover {
+            border-color: #00A8E8;
+            box-shadow: 0 4px 12px rgba(0, 168, 232, 0.1);
+        }
+
+        .denomination-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: white;
+        }
+
+        .bill-1000 { background: linear-gradient(135deg, #8B5CF6, #6D28D9); }
+        .bill-500 { background: linear-gradient(135deg, #EC4899, #BE185D); }
+        .bill-100 { background: linear-gradient(135deg, #EF4444, #DC2626); }
+        .bill-50 { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+        .bill-20 { background: linear-gradient(135deg, #10B981, #059669); }
+        .coin { background: linear-gradient(135deg, #F59E0B, #D97706); }
+
+        .denomination-details {
+            flex: 1;
+        }
+
+        .denomination-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+
+        .denomination-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .denomination-input {
+            width: 80px;
+            padding: 0.5rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .denomination-input:focus {
+            outline: none;
+            border-color: #00A8E8;
+        }
+
+        .denomination-value {
+            font-weight: bold;
+            color: #2D3E50;
+            font-size: 1.1rem;
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, #2D3E50 0%, #1A2530 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin: 2rem 0;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .summary-label {
+            font-size: 1rem;
+        }
+
+        .summary-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .highlight-value {
+            font-size: 1.5rem !important;
+            color: #4ECDC4;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-icon {
+            font-size: 1.8rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2D3E50;
+        }
+
+        .fuel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .fuel-input-card {
+            background: white;
+            border: 2px solid #E3F2FD;
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+        }
+
+        .fuel-input-card.e91 { border-left: 4px solid #FF6B9D; }
+        .fuel-input-card.e95 { border-left: 4px solid #4ECDC4; }
+        .fuel-input-card.b7 { border-left: 4px solid #45B7D1; }
+
+        .fuel-type-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .fuel-calc-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .reconciliation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .recon-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 2px solid #E3F2FD;
+        }
+
+        .recon-card.highlight {
+            border-color: #00A8E8;
+            background: linear-gradient(135deg, #E0F7FA, #B2EBF2);
+        }
+
+        .recon-card.warning {
+            border-color: #FFA726;
+            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+        }
+
+        .recon-title {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .recon-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2D3E50;
+        }
+
+        .list-item {
+            background: white;
+            border: 1px solid #E5E7EB;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-delete {
+            background: #EF4444;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .btn-delete:hover {
+            background: #DC2626;
+        }
+
+        @media (max-width: 768px) {
+            .cash-counter-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .denomination-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 0.95rem;
+            }
+        }
+        /* Fix SweetAlert2 Z-Index */
+        .swal2-container {
+            z-index: 20000 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">BC PETROLEUM</div>
+                <div class="sidebar-subtitle">ระบบจัดการปั๊มน้ำมัน</div>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/">
+                        <span class="sidebar-icon">📊</span>
+                        <span>แดชบอร์ด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/daily.html">
+                        <span class="sidebar-icon">📝</span>
+                        <span>จัดการรายวัน</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/credit.html">
+                        <span class="sidebar-icon">💳</span>
+                        <span>จัดการเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/customers.html">
+                        <span class="sidebar-icon">👥</span>
+                        <span>ลูกค้าเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/cash.html" class="active">
+                        <span class="sidebar-icon">💵</span>
+                        <span>จัดการเงินสด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/accounting.html">
+                        <span class="sidebar-icon">💰</span>
+                        <span>จัดการบัญชี</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/reports.html">
+                        <span class="sidebar-icon">📈</span>
+                        <span>รายงาน</span>
+                    </a>
+                </li>
+                <li style="margin-top: 2rem;">
+                    <a href="#" id="logoutBtn">
+                        <span class="sidebar-icon">🚪</span>
+                        <span>ออกจากระบบ</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-left">
+                    <h1>จัดการเงินสดประจำวัน</h1>
+                    <div class="header-date" id="currentDate">กำลังโหลด...</div>
+                </div>
+                <div class="header-user">
+                    <div class="user-avatar" id="userAvatar">W</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">ผู้ใช้</div>
+                        <div class="user-role" id="userRole">User</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Date Selector -->
+            <div style="margin-bottom: 2rem;">
+                <label class="form-label">เลือกวันที่</label>
+                <input type="date" class="form-control" id="selectedDate" style="max-width: 250px;">
+            </div>
+
+            <!-- Section 1: Cash Counter -->
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-icon">💵</span>
+                    <h2 class="section-title">นับเงินสด</h2>
+                </div>
+
+                <div class="cash-counter-grid" id="cashCounterGrid">
+                    <!-- Bills -->
+                    <div class="denomination-item">
+                        <div class="denomination-icon bill-1000">฿1000</div>
+                        <div class="denomination-details">
+                            <div class="denomination-label">แบงค์ 1,000 บาท</div>
+                            <div class="denomination-input-group">
+                                <input type="number" class="denomination-input" id="bills_1000" min="0" value="0">
+                                <span>×</span>
+                                <span class="denomination-value" id="value_1000">฿0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="denomination-item">
+                        <div class="denomination-icon bill-500">฿500</div>
+                        <div class="denomination-details">
+                            <div class="denomination-label">แบงค์ 500 บาท</div>
+                            <div class="denomination-input-group">
+                                <input type="number" class="denomination-input" id="bills_500" min="0" value="0">
+                                <span>×</span>
+                                <span class="denomination-value" id="value_500">฿0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="denomination-item">
+                        <div class="denomination-icon bill-100">฿100</div>
+                        <div class="denomination-details">
+                            <div class="denomination-label">แบงค์ 100 บาท</div>
+                            <div class="denomination-input-group">
+                                <input type="number" class="denomination-input" id="bills_100" min="0" value="0">
+                                <span>×</span>
+                                <span class="denomination-value" id="value_100">฿0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="denomination-item">
+                        <div class="denomination-icon bill-50">฿50</div>
+                        <div class="denomination-details">
+                            <div class="denomination-label">แบงค์ 50 บาท</div>
+                            <div class="denomination-input-group">
+                                <input type="number" class="denomination-input" id="bills_50" min="0" value="0">
+                                <span>×</span>
+                                <span class="denomination-value" id="value_50">฿0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="denomination-item">
+                        <div class="denomination-icon bill-20">฿20</div>
+                        <div class="denomination-details">
+                            <div class="denomination-label">แบงค์ 20 บาท</div>
+                            <div class="denomination-input-group">
+                                <input type="number" class="denomination-input" id="bills_20" min="0" value="0">
+                                <span>×</span>
+                                <span class="denomination-value" id="value_20">฿0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coins -->
+                    <div class="denomination-item">
+                        <div class="denomination-icon coin">฿10</div>
+                        <div class="denomination-details">
+                            <div class="denomination-label">เหรียญ 10 บาท</div>
+                            <div class="denomination-input-group">
+                                <input type="number" class="denomination-input" id="coins_10" min="0" value="0">
+                                <span>×</span>
+                                <span class="denomination-value" id="value_10">฿0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="denomination-item">
+                        <div class="denomination-icon coin">฿5</div>
+                        <div class="denomination-details">
+                            <div class="denomination-label">เหรียญ 5 บาท</div>
+                            <div class="denomination-input-group">
+                                <input type="number" class="denomination-input" id="coins_5" min="0" value="0">
+                                <span>×</span>
+                                <span class="denomination-value" id="value_5">฿0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="denomination-item">
+                        <div class="denomination-icon coin">฿2</div>
+                        <div class="denomination-details">
+                            <div class="denomination-label">เหรียญ 2 บาท</div>
+                            <div class="denomination-input-group">
+                                <input type="number" class="denomination-input" id="coins_2" min="0" value="0">
+                                <span>×</span>
+                                <span class="denomination-value" id="value_2">฿0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="denomination-item">
+                        <div class="denomination-icon coin">฿1</div>
+                        <div class="denomination-details">
+                            <div class="denomination-label">เหรียญ 1 บาท</div>
+                            <div class="denomination-input-group">
+                                <input type="number" class="denomination-input" id="coins_1" min="0" value="0">
+                                <span>×</span>
+                                <span class="denomination-value" id="value_1">฿0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="summary-box">
+                    <div class="summary-row">
+                        <span class="summary-label">รวมเงินที่นับได้:</span>
+                        <span class="summary-value" id="totalCountedCash">฿0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">หัก: เงินทอน (หมุนเวียน):</span>
+                        <span class="summary-value">-฿1,000</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">ยอดขายเงินสดสุทธิ:</span>
+                        <span class="summary-value highlight-value" id="netCashSales">฿0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Bank Transfer -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="section-header">
+                    <span class="section-icon">🏦</span>
+                    <h2 class="section-title">เงินโอนผ่านธนาคาร</h2>
+                </div>
+                <div class="form-group" style="max-width: 400px;">
+                    <label class="form-label">ยอดเงินโอนวันนี้</label>
+                    <input type="number" class="form-control" id="bankTransfer" step="0.01" min="0" value="0">
+                </div>
+            </div>
+
+            <!-- Section 3: Credit Cash Payments -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="section-header">
+                    <span class="section-icon">💳</span>
+                    <h2 class="section-title">รับชำระเงินเชื่อ</h2>
+                </div>
+
+
+
+                <div id="creditPaymentsList" style="margin-top: 1.5rem;"></div>
+            </div>
+
+            <!-- Section 4: Personal Fuel Usage -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="section-header">
+                    <span class="section-icon">⛽</span>
+                    <h2 class="section-title">น้ำมันใช้เอง</h2>
+                </div>
+
+                <div class="fuel-grid">
+                    <div class="fuel-input-card b7">
+                        <div class="fuel-type-label" style="color: #45B7D1;">ดีเซล B7</div>
+                        <label class="form-label" style="font-size: 0.9rem; margin-top: 0.5rem;">จำนวนเงิน (บาท)</label>
+                        <input type="number" class="form-control" id="fuelB7" step="0.01" min="0" 
+                               placeholder="0.00">
+                        <small id="litersB7" style="color: #666; display: block; margin-top: 0.5rem;"></small>
+                        <div class="fuel-calc-row">
+                            <span id="priceB7">@ ฿0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="fuel-input-card e91">
+                        <div class="fuel-type-label" style="color: #FF6B9D;">แก๊สโซฮอล์ 91</div>
+                        <label class="form-label" style="font-size: 0.9rem; margin-top: 0.5rem;">จำนวนเงิน (บาท)</label>
+                        <input type="number" class="form-control" id="fuelE91" step="0.01" min="0" 
+                               placeholder="0.00">
+                        <small id="litersE91" style="color: #666; display: block; margin-top: 0.5rem;"></small>
+                        <div class="fuel-calc-row">
+                            <span id="priceE91">@ ฿0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="fuel-input-card e95">
+                        <div class="fuel-type-label" style="color: #4ECDC4;">แก๊สโซฮอล์ 95</div>
+                        <label class="form-label" style="font-size: 0.9rem; margin-top: 0.5rem;">จำนวนเงิน (บาท)</label>
+                        <input type="number" class="form-control" id="fuelE95" step="0.01" min="0" 
+                               placeholder="0.00">
+                        <small id="litersE95" style="color: #666; display: block; margin-top: 0.5rem;"></small>
+                        <div class="fuel-calc-row">
+                            <span id="priceE95">@ ฿0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1rem; text-align: right; font-size: 1.2rem; font-weight: bold;">
+                    รวมมูลค่าน้ำมันใช้เอง: <span id="totalFuelValue" style="color: #00A8E8;">฿0.00</span>
+                </div>
+
+                <button class="btn btn-primary" onclick="savePersonalFuel()" style="margin-top: 1rem;">💾 บันทึกน้ำมันใช้เอง</button>
+                
+                <div id="personalFuelList" style="margin-top: 1.5rem;"></div>
+            </div>
+
+            <!-- Section 5: Reconciliation Summary -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="section-header">
+                    <span class="section-icon">📊</span>
+                    <h2 class="section-title">สรุปยอดประจำวัน</h2>
+                </div>
+
+                <div class="reconciliation-grid">
+                    <!-- Revenue Card -->
+                    <div class="recon-card">
+                        <div class="recon-title">💰 รายรับทั้งหมด</div>
+                        <div class="recon-value" id="reconTotalRevenue" style="color: #10B981;">฿0.00</div>
+                        <hr style="margin: 1rem 0;">
+                        <div style="font-size: 0.9rem; color: #666;">
+                            <div style="margin-bottom: 0.5rem;">• ขายเงินสด: <span id="reconCashSales">฿0.00</span></div>
+                            <div style="margin-bottom: 0.5rem;">• เงินโอน: <span id="reconBankTransfer">฿0.00</span></div>
+                            <div>• ชำระเงินเชื่อ: <span id="reconCreditPayments">฿0.00</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Expected Sales Card -->
+                    <div class="recon-card">
+                        <div class="recon-title">📈 ยอดขายตามหัวจ่าย</div>
+                        <div class="recon-value" id="reconExpectedSales" style="color: #3B82F6;">฿0.00</div>
+                        <hr style="margin: 1rem 0;">
+                        <div style="font-size: 0.9rem; color: #666;">
+                            <div style="margin-bottom: 0.5rem;">• ตัดจากหัวจ่าย: <span id="reconNozzleSales">฿0.00</span></div>
+                            <div style="margin-bottom: 0.5rem;">• ขายเงินเชื่อ: <span id="reconCreditSales">฿0.00</span></div>
+                            <div>• น้ำมันใช้เอง: <span id="reconPersonalFuel">฿0.00</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Difference Card -->
+                    <div class="recon-card warning">
+                        <div class="recon-title">⚖️ ผลต่าง</div>
+                        <div class="recon-value" id="reconDifference" style="color: #F59E0B;">฿0.00</div>
+                        <div id="reconDifferenceLabel" style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div style="margin-top: 2rem; text-align: center; margin-bottom: 2rem;">
+                <button class="btn btn-primary btn-lg" onclick="saveCashRecord()" style="min-width: 250px;">
+                    💾 บันทึกข้อมูลทั้งหมด
+                </button>
+            </div>
+
+            <footer class="page-footer">
+                <p><strong>บีซี ปิโตรเลียม</strong></p>
+                <p>40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110 | โทร: 096-236-9153</p>
+            </footer>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/js/cash.js"></script>
+    <script src="/js/mobile.js"></script>
+</body>
+
+</html>

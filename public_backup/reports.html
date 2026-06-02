@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงาน - บีซี ปิโตรเลียม</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/mobile-fix.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* Mobile-specific styles for Reports page */
+        @media (max-width: 768px) {
+
+            /* Reduce stat card font sizes */
+            .stat-value {
+                font-size: 1.4rem !important;
+            }
+
+            .stat-label {
+                font-size: 0.85rem !important;
+            }
+
+            /* Filter form - stack vertically */
+            #filterForm {
+                flex-direction: column !important;
+                gap: 1rem !important;
+            }
+
+            #filterForm .form-group {
+                width: 100% !important;
+                min-width: 100% !important;
+                margin: 0 !important;
+            }
+
+            #filterForm button {
+                width: 100%;
+                height: auto !important;
+                padding: 0.75rem !important;
+            }
+
+            /* Chart container - ensure responsiveness */
+            canvas {
+                max-width: 100%;
+                height: auto !important;
+            }
+
+            /* Chart card height adjustment */
+            .card>div[style*="height"] {
+                height: 300px !important;
+            }
+
+            /* Table - smaller font on mobile */
+            table {
+                font-size: 0.8rem;
+            }
+
+            th,
+            td {
+                padding: 0.5rem 0.375rem;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">BC PETROLEUM</div>
+                <div class="sidebar-subtitle">ระบบจัดการปั๊มน้ำมัน</div>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/">
+                        <span class="sidebar-icon">📊</span>
+                        <span>แดชบอร์ด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/daily.html">
+                        <span class="sidebar-icon">📝</span>
+                        <span>จัดการรายวัน</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/credit.html">
+                        <span class="sidebar-icon">💳</span>
+                        <span>จัดการเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/customers.html">
+                        <span class="sidebar-icon">👥</span>
+                        <span>ลูกค้าเงินเชื่อ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/cash.html">
+                        <span class="sidebar-icon">💵</span>
+                        <span>จัดการเงินสด</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/accounting.html">
+                        <span class="sidebar-icon">💰</span>
+                        <span>จัดการบัญชี</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/reports.html" class="active">
+                        <span class="sidebar-icon">📈</span>
+                        <span>รายงาน</span>
+                    </a>
+                </li>
+                <li style="margin-top: 2rem;">
+                    <a href="#" id="logoutBtn">
+                        <span class="sidebar-icon">🚪</span>
+                        <span>ออกจากระบบ</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-left">
+                    <h1>รายงานสรุปยอดขาย</h1>
+                    <div class="header-date" id="currentDate">กำลังโหลด...</div>
+                </div>
+                <div class="header-user">
+                    <div class="user-avatar" id="userAvatar">W</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">ผู้ใช้</div>
+                        <div class="user-role" id="userRole">User</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Filter Section -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <form id="filterForm" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                    <div class="form-group" style="margin: 0; min-width: 200px;">
+                        <label class="form-label">ตั้งแต่วันที่</label>
+                        <input type="date" class="form-control" id="startDate" required>
+                    </div>
+                    <div class="form-group" style="margin: 0; min-width: 200px;">
+                        <label class="form-label">ถึงวันที่</label>
+                        <input type="date" class="form-control" id="endDate" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="height: 42px;">
+                        ค้นหา
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" style="height: 42px;"
+                        onclick="setDefaultDateRange()">
+                        เดือนนี้
+                    </button>
+                </form>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card success">
+                    <div class="stat-label">ยอดขายรวม</div>
+                    <div class="stat-value" id="summarySales">฿0.00</div>
+                </div>
+                <div class="stat-card info">
+                    <div class="stat-label">กำไรสุทธิ</div>
+                    <div class="stat-value" id="summaryProfit">฿0.00</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-label">ปริมาณลิตร</div>
+                    <div class="stat-value" id="summaryLiters">0.000</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title">แนวโน้มยอดขายและกำไร</h3>
+                </div>
+                <div style="height: 400px;">
+                    <canvas id="salesTrendsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Detailed Table -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title">ข้อมูลรายวัน</h3>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>วันที่</th>
+                                <th>E91 (ลิตร)</th>
+                                <th>E95 (ลิตร)</th>
+                                <th>B7 (ลิตร)</th>
+                                <th>รวม (ลิตร)</th>
+                                <th>ยอดขาย (บาท)</th>
+                                <th>กำไร (บาท)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <footer class="page-footer">
+                <p><strong>บีซี ปิโตรเลียม</strong></p>
+                <p>40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110 | โทร: 096-236-9153</p>
+            </footer>
+        </main>
+    </div>
+
+    <script src="/js/utils.js?v=SUPER_FINAL"></script>
+    <script src="/js/reports.js"></script>
+    <script src="/js/mobile.js?v=SUPER_FINAL"></script>
+</body>
+
+</html>

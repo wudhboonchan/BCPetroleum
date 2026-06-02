@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลูกค้าเงินเชื่อ - BC PETROLEUM</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/themes/light-border.css" />
+    <style>
+        .swal2-container {
+            z-index: 20000 !important;
+        }
+
+        /* Responsive Action Bar */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .action-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .action-bar button,
+            .action-bar input {
+                width: 100%;
+                max-width: none !important;
+                min-width: 0 !important;
+            }
+        }
+    </style>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon-v2.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-v2.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v2.png">
+</head>
+
+<body>
+    <header class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-brand">
+                <span class="brand-icon">⛽</span>
+                <span class="brand-name">BC PETROLEUM</span>
+            </div>
+            <nav class="top-bar-nav">
+                <a href="/index.html" class="nav-link"><span class="nav-link-icon">📊</span><span
+                        class="nav-link-text">แดชบอร์ด</span></a>
+                <a href="/daily.html" class="nav-link"><span class="nav-link-icon">📝</span><span
+                        class="nav-link-text">จัดการรายวัน</span></a>
+                <a href="/credit.html" class="nav-link"><span class="nav-link-icon">💳</span><span
+                        class="nav-link-text">เงินเชื่อ</span></a>
+                <a href="/cash.html" class="nav-link"><span class="nav-link-icon">💵</span><span
+                        class="nav-link-text">เงินสด</span></a>
+                <a href="/accounting.html" class="nav-link"><span class="nav-link-icon">💰</span><span
+                        class="nav-link-text">บัญชี</span></a>
+                <a href="/customers.html" class="nav-link active"><span class="nav-link-icon">👥</span><span
+                        class="nav-link-text">ลูกค้า</span></a>
+                <a href="/reports.html" class="nav-link"><span class="nav-link-icon">📈</span><span
+                        class="nav-link-text">รายงาน</span></a>
+            </nav>
+            <div class="top-bar-actions">
+                <button class="menu-toggle" id="menuToggle" aria-label="Toggle Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="user-profile-container">
+                    <div class="user-profile" id="userProfileBtn">
+                        <div class="user-avatar" id="userAvatar">W</div>
+                        <div class="user-info">
+                            <div class="user-name" id="userName">ผู้ใช้</div>
+                            <div class="user-role" id="userRole">User</div>
+                        </div>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="#" class="dropdown-item" id="logoutBtn">
+                            <span class="dropdown-icon">🚪</span>
+                            <span>ออกจากระบบ</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="main-container">
+        <div class="page-header">
+            <div class="page-header-content">
+                <h1 class="page-title">ลูกค้าเงินเชื่อ</h1>
+                <p class="page-subtitle" id="currentDate">กำลังโหลด...</p>
+            </div>
+        </div>
+
+        <!-- Actions Bar -->
+        <div class="action-bar">
+            <button class="btn btn-primary btn-lg" onclick="openAddCustomerModal()">
+                + เพิ่มลูกค้าใหม่
+            </button>
+            <input type="text" id="searchInput" class="form-control" placeholder="ค้นหาชื่อลูกค้า หรือ เบอร์โทร..."
+                style="min-width: 250px; flex: 1; max-width: 400px;">
+        </div>
+
+        <!-- Customers Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">👥 รายชื่อลูกค้าทั้งหมด</h3>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>รหัส</th>
+                            <th>ชื่อลูกค้า</th>
+                            <th>เบอร์โทร</th>
+                            <th>ผู้ติดต่อ</th>
+                            <th>ยอดค้างชำระ</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerListBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                กำลังโหลดข้อมูล...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer class="page-footer">
+            <p><strong>บีซี ปิโตรเลียม</strong></p>
+            <p>40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110 | โทร: 096-236-9153</p>
+        </footer>
+    </main>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/customers.js"></script>
+    <script>
+        // Check Auth & Setup Top Bar (Profile, Logout, etc.)
+        Auth.requireAuth();
+        Auth.setupTopBar();
+    </script>
+</body>
+
+</html>

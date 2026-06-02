@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>บันทึกรายวัน · BC Petroleum</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/x-icon" href="/favicon-v2.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-v2.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v2.png">
+  <style>
+    /* ── nozzle table ── */
+    .nozzle-table { width: 100%; border-collapse: collapse; }
+    .nozzle-table th {
+      text-align: left; font-family: var(--f-body); font-size: 14px;
+      letter-spacing: 0; color: var(--ink-2); font-weight: 500;
+      padding: 10px 16px 10px 0; border-bottom: 1px solid var(--line-soft);
+    }
+    .nozzle-table td {
+      padding: 14px 16px 14px 0;
+      border-bottom: 1px solid var(--line-soft);
+      vertical-align: middle;
+      font-size: 15px;
+    }
+    .nozzle-table tr:last-child td { border-bottom: 0; }
+    .nozzle-table tr:hover td { background: color-mix(in oklch, var(--ink) 2%, transparent); }
+    .nozzle-table td.r, .nozzle-table th.r { text-align: right; padding-right: 0; padding-left: 20px; }
+
+    /* nozzle meter input */
+    .meter-input {
+      font-family: var(--f-mono); font-size: 16px;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      background: transparent;
+      border: 0; border-bottom: 1px solid var(--line);
+      padding: 8px 0; width: 150px;
+      border-radius: 0;
+    }
+    .meter-input:focus { outline: none; border-bottom-color: var(--ink-2); }
+    .meter-input::-webkit-outer-spin-button,
+    .meter-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .meter-input { -moz-appearance: textfield; appearance: textfield; }
+
+    .meter-prev {
+      font-family: var(--f-mono); font-size: 15px;
+      color: var(--ink-3); font-variant-numeric: tabular-nums;
+    }
+
+    /* fuel bars/tags inherit from style.css global --fuel-* vars */
+    .fuel-bar { align-self: stretch; min-height: 18px; }
+
+    /* inventory cards rendered by daily.js */
+    .inventory-card {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--line-soft);
+      display: grid;
+      grid-template-columns: 6px 1fr auto;
+      gap: 0 20px;
+      align-items: start;
+    }
+    .inventory-card:last-child { border-bottom: 0; }
+    .inventory-card-bar { width: 6px; align-self: stretch; border-radius: 2px; margin-top: 3px; }
+    .inventory-card.b7  .inventory-card-bar { background: var(--fc-b7); }
+    .inventory-card.e91 .inventory-card-bar { background: var(--fc-e91); }
+    .inventory-card.e95 .inventory-card-bar { background: var(--fc-e95); }
+
+    /* breakdown tables from daily.js */
+    .fuel-breakdown-card {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .fuel-breakdown-card:last-child { border-bottom: 0; }
+
+    /* pump group header */
+    .pump-head {
+      display: flex; align-items: center; gap: 12px;
+      padding: 28px 0 16px;
+      border-top: 1px solid var(--line-soft);
+    }
+    .pump-head:first-child { border-top: 0; padding-top: 0; }
+    .pump-label { font-family: var(--f-body); font-size: 14px; letter-spacing: 0; color: var(--ink-3); font-weight: 500; }
+
+    /* price inputs */
+    .price-field {
+      font-family: var(--f-mono); font-size: 16px;
+      font-variant-numeric: tabular-nums; color: var(--ink);
+      background: transparent; border: 0;
+      border-bottom: 1px solid var(--line);
+      padding: 8px 0; width: 120px; border-radius: 0;
+    }
+    .price-field:focus { outline: none; border-bottom-color: var(--ink-2); }
+    .price-field::-webkit-outer-spin-button,
+    .price-field::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .price-field { -moz-appearance: textfield; appearance: textfield; }
+
+    /* tank levels */
+    .tank-row { padding: 24px 0; border-bottom: 1px solid var(--line-soft); }
+    .tank-row:last-child { border-bottom: 0; }
+    .tank-bar-wrap { height: 3px; background: var(--bg-deep); margin-top: 14px; border-radius: 2px; }
+    .tank-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+    .tank-name { font-size: 16px; color: var(--ink); }
+    .tank-reading { font-family: var(--f-mono); font-size: 13px; color: var(--ink-3); }
+
+    /* summary strip */
+    .summary-strip {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+      padding: 32px 0; border-top: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft); margin-top: 64px;
+    }
+    .summary-item { padding: 0 32px; }
+    .summary-item.bordered { border-left: 1px solid var(--line-soft); }
+    .summary-item-label { font-size: 15px; color: var(--ink-3); }
+    .summary-item-value {
+      font-family: var(--f-body); font-size: 36px; font-weight: 300;
+      letter-spacing: -0.025em; font-variant-numeric: tabular-nums;
+      margin-top: 10px; line-height: 1; color: var(--ink);
+    }
+    .summary-item-sub { font-size: 13px; color: var(--ink-3); margin-top: 8px; font-family: var(--f-mono); }
+
+    /* fuel breakdown table (after submit) */
+    .breakdown-wrap { display: none; margin-top: 64px; }
+    .breakdown-wrap.visible { display: block; }
+
+    /* modal */
+    .modal {
+      position: fixed; inset: 0; z-index: 500;
+      display: flex; align-items: center; justify-content: center;
+      background: color-mix(in oklch, var(--ink) 40%, transparent);
+      opacity: 0; visibility: hidden; transition: opacity 0.2s;
+    }
+    .modal.active { opacity: 1; visibility: visible; }
+    .modal-box {
+      background: var(--surface); border: 1px solid var(--line-soft);
+      border-radius: var(--r-3); padding: 40px;
+      width: 100%; max-width: 480px;
+      transform: translateY(-12px); transition: transform 0.2s;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal.active .modal-box { transform: translateY(0); }
+    .modal-hd {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 32px;
+    }
+    .modal-ttl { font-size: 16px; font-weight: 400; color: var(--ink); }
+    .modal-x {
+      appearance: none; border: 0; background: transparent;
+      font: inherit; font-size: 18px; color: var(--ink-3);
+      cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: var(--r-1);
+    }
+    .modal-x:hover { background: var(--bg-deep); color: var(--ink); }
+
+    /* toolbar */
+    .daily-toolbar {
+      display: flex; align-items: center; gap: 20px;
+      padding: 14px 0;
+      border-top: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+      margin-bottom: 56px;
+    }
+    .toolbar-select {
+      font-family: var(--f-body); font-size: 13px; color: var(--ink);
+      background: transparent; border: 0;
+      border-bottom: none; padding: 0; cursor: pointer;
+    }
+    .toolbar-select:focus { outline: none; }
+
+    /* submit button wide */
+    .btn-submit-wide {
+      width: 100%; margin-top: 48px;
+      appearance: none; background: var(--ink); color: var(--bg);
+      border: none; border-radius: 999px;
+      font: inherit; font-size: 14px; font-weight: 500;
+      padding: 14px; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-submit-wide:hover { opacity: 0.85; }
+
+    @media (max-width: 768px) {
+      .summary-strip { grid-template-columns: 1fr; }
+      .summary-item.bordered { border-left: 0; border-top: 1px solid var(--line-soft); padding-top: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="top-bar">
+  <div class="top-bar-container">
+    <a href="/index.html" class="top-bar-brand">
+      <div class="brand-mark"></div>
+      <span class="brand-name">BC Petroleum</span>
+    </a>
+    <nav class="top-bar-nav">
+      <a href="/index.html"      class="nav-link">แดชบอร์ด</a>
+      <a href="/daily.html"      class="nav-link active">รายวัน</a>
+      <a href="/credit.html"     class="nav-link">เงินเชื่อ</a>
+      <a href="/cash.html"       class="nav-link">เงินสด</a>
+      <a href="/accounting.html" class="nav-link">บัญชี</a>
+      <a href="/customers.html"  class="nav-link">ลูกค้า</a>
+      <a href="/reports.html"    class="nav-link">รายงาน</a>
+    </nav>
+    <div class="top-bar-actions">
+      <span class="live-clock mono" id="liveClock">--:--</span>
+      <div class="user-profile-container">
+        <div class="user-profile" id="userProfileBtn">
+          <div class="user-avatar" id="userAvatar">W</div>
+          <span id="userName" style="font-size:13px;color:var(--ink-2)"></span>
+          <span id="userRole" style="display:none"></span>
+          <span class="dropdown-arrow">▾</span>
+        </div>
+        <div class="user-dropdown" id="userDropdown">
+          <a href="#" class="dropdown-item" id="logoutBtn">ออกจากระบบ</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="main-container">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-header-content">
+      <div class="page-eyebrow">รายวัน · Daily Operations</div>
+      <h1 class="page-title">บันทึกหัวจ่าย</h1>
+    </div>
+    <div class="page-subtitle col" style="gap:6px;font-family:var(--f-mono)">
+      <div id="headerDate">—</div>
+      <div class="text-xs" style="color:var(--sage);margin-top:4px" id="autoSaveStatus"></div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="daily-toolbar">
+    <input type="date" id="datePicker" class="toolbar-select" style="font-family:var(--f-body);font-size:13px">
+    <div style="flex:1"></div>
+    <button class="btn btn-ghost" style="font-size:12px" onclick="openInventorySettings()">ตั้งค่าคลัง</button>
+    <button class="btn btn-primary" type="button" onclick="document.getElementById('meterForm').requestSubmit()">บันทึก</button>
+  </div>
+
+  <!-- TANK LEVELS -->
+  <section style="margin-bottom:80px">
+    <div class="section-hd">
+      <span class="eyebrow">ระดับถังเก็บ</span>
+      <span class="section-meta" id="tankUpdateTime"></span>
+    </div>
+    <div id="inventoryContainer">
+      <div style="color:var(--ink-3);font-size:13px">กำลังโหลด...</div>
+    </div>
+  </section>
+
+  <!-- FUEL PRICES -->
+  <section style="margin-bottom:80px">
+    <div class="section-hd">
+      <span class="eyebrow">ราคาน้ำมันวันนี้</span>
+    </div>
+    <form id="priceForm">
+      <table class="nozzle-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>ประเภท</th>
+            <th class="r">ราคาต้นทุน (฿/ลิตร)</th>
+            <th class="r">ราคาขาย (฿/ลิตร)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="fuel-bar b7" style="height:22px"></div></td>
+            <td style="font-size:16px">ดีเซล B7</td>
+            <td class="r"><input type="number" class="price-field" id="b7CostPrice" step="0.01" required placeholder="0.00"></td>
+            <td class="r"><input type="number" class="price-field" id="b7SellPrice" step="0.01" required placeholder="0.00"></td>
+          </tr>
+          <tr>
+            <td><div class="fuel-bar e91" style="height:22px"></div></td>
+            <td style="font-size:16px">แก๊สโซฮอล์ 91</td>
+            <td class="r"><input type="number" class="price-field" id="e91CostPrice" step="0.01" required placeholder="0.00"></td>
+            <td class="r"><input type="number" class="price-field" id="e91SellPrice" step="0.01" required placeholder="0.00"></td>
+          </tr>
+          <tr>
+            <td><div class="fuel-bar e95" style="height:22px"></div></td>
+            <td style="font-size:16px">แก๊สโซฮอล์ 95</td>
+            <td class="r"><input type="number" class="price-field" id="e95CostPrice" step="0.01" required placeholder="0.00"></td>
+            <td class="r"><input type="number" class="price-field" id="e95SellPrice" step="0.01" required placeholder="0.00"></td>
+          </tr>
+        </tbody>
+      </table>
+    </form>
+  </section>
+
+  <!-- METER READINGS -->
+  <section>
+    <div class="section-hd" style="margin-bottom:0">
+      <span class="eyebrow">ตารางมิเตอร์หัวจ่าย</span>
+      <span class="section-meta mono">เลขมิเตอร์เมื่อวาน → วันนี้</span>
+    </div>
+
+    <form id="meterForm">
+
+      <!-- PUMP 1 -->
+      <div class="pump-head">
+        <div class="fuel-bar" style="background:var(--ink-3);height:14px"></div>
+        <span class="pump-label">ตู้จ่ายที่ 1</span>
+      </div>
+      <table class="nozzle-table">
+        <thead>
+          <tr>
+            <th>หัวจ่าย</th>
+            <th>ประเภท</th>
+            <th class="r">เมื่อวาน</th>
+            <th class="r">วันนี้</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- P1-N1 E91 -->
+          <tr>
+            <td style="font-size:15px;color:var(--ink-2)">หัวจ่ายที่ 1</td>
+            <td><span class="fuel-tag e91">E91</span></td>
+            <td class="r">
+              <div class="meter-prev" id="nozzle1Yesterday">—</div>
+              <input type="hidden" id="nozzle1YesterdayInput">
+            </td>
+            <td class="r">
+              <input type="number" class="meter-input" id="nozzle1Today" step="0.001" required placeholder="0.000">
+            </td>
+          </tr>
+          <!-- P1-N2 B7 -->
+          <tr>
+            <td style="font-size:15px;color:var(--ink-2)">หัวจ่ายที่ 2</td>
+            <td><span class="fuel-tag b7">B7</span></td>
+            <td class="r">
+              <div class="meter-prev" id="nozzle2Yesterday">—</div>
+              <input type="hidden" id="nozzle2YesterdayInput">
+            </td>
+            <td class="r">
+              <input type="number" class="meter-input" id="nozzle2Today" step="0.001" required placeholder="0.000">
+            </td>
+          </tr>
+          <!-- P1-N3 E91 -->
+          <tr>
+            <td style="font-size:15px;color:var(--ink-2)">หัวจ่ายที่ 3</td>
+            <td><span class="fuel-tag e91">E91</span></td>
+            <td class="r">
+              <div class="meter-prev" id="nozzle3Yesterday">—</div>
+              <input type="hidden" id="nozzle3YesterdayInput">
+            </td>
+            <td class="r">
+              <input type="number" class="meter-input" id="nozzle3Today" step="0.001" required placeholder="0.000">
+            </td>
+          </tr>
+          <!-- P1-N4 B7 -->
+          <tr>
+            <td style="font-size:15px;color:var(--ink-2)">หัวจ่ายที่ 4</td>
+            <td><span class="fuel-tag b7">B7</span></td>
+            <td class="r">
+              <div class="meter-prev" id="nozzle4Yesterday">—</div>
+              <input type="hidden" id="nozzle4YesterdayInput">
+            </td>
+            <td class="r">
+              <input type="number" class="meter-input" id="nozzle4Today" step="0.001" required placeholder="0.000">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- PUMP 2 -->
+      <div class="pump-head">
+        <div class="fuel-bar" style="background:var(--ink-3);height:14px"></div>
+        <span class="pump-label">ตู้จ่ายที่ 2</span>
+      </div>
+      <table class="nozzle-table">
+        <thead>
+          <tr>
+            <th>หัวจ่าย</th>
+            <th>ประเภท</th>
+            <th class="r">เมื่อวาน</th>
+            <th class="r">วันนี้</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- P2-N1 E95 -->
+          <tr>
+            <td style="font-size:15px;color:var(--ink-2)">หัวจ่ายที่ 1</td>
+            <td><span class="fuel-tag e95">E95</span></td>
+            <td class="r">
+              <div class="meter-prev" id="nozzle5Yesterday">—</div>
+              <input type="hidden" id="nozzle5YesterdayInput">
+            </td>
+            <td class="r">
+              <input type="number" class="meter-input" id="nozzle5Today" step="0.001" required placeholder="0.000">
+            </td>
+          </tr>
+          <!-- P2-N2 B7 -->
+          <tr>
+            <td style="font-size:15px;color:var(--ink-2)">หัวจ่ายที่ 2</td>
+            <td><span class="fuel-tag b7">B7</span></td>
+            <td class="r">
+              <div class="meter-prev" id="nozzle6Yesterday">—</div>
+              <input type="hidden" id="nozzle6YesterdayInput">
+            </td>
+            <td class="r">
+              <input type="number" class="meter-input" id="nozzle6Today" step="0.001" required placeholder="0.000">
+            </td>
+          </tr>
+          <!-- P2-N3 E95 -->
+          <tr>
+            <td style="font-size:15px;color:var(--ink-2)">หัวจ่ายที่ 3</td>
+            <td><span class="fuel-tag e95">E95</span></td>
+            <td class="r">
+              <div class="meter-prev" id="nozzle7Yesterday">—</div>
+              <input type="hidden" id="nozzle7YesterdayInput">
+            </td>
+            <td class="r">
+              <input type="number" class="meter-input" id="nozzle7Today" step="0.001" required placeholder="0.000">
+            </td>
+          </tr>
+          <!-- P2-N4 B7 -->
+          <tr>
+            <td style="font-size:15px;color:var(--ink-2)">หัวจ่ายที่ 4</td>
+            <td><span class="fuel-tag b7">B7</span></td>
+            <td class="r">
+              <div class="meter-prev" id="nozzle8Yesterday">—</div>
+              <input type="hidden" id="nozzle8YesterdayInput">
+            </td>
+            <td class="r">
+              <input type="number" class="meter-input" id="nozzle8Today" step="0.001" required placeholder="0.000">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <button type="submit" class="btn-submit-wide">ยืนยันส่งข้อมูล</button>
+    </form>
+  </section>
+
+  <!-- SUMMARY (hidden until submit) -->
+  <div id="summarySection" style="display:none">
+    <div class="summary-strip" style="margin-top:64px">
+      <div class="summary-item">
+        <div class="summary-item-label">ยอดขายทั้งหมด</div>
+        <div class="summary-item-value" id="summaryTotalSales">—</div>
+      </div>
+      <div class="summary-item bordered">
+        <div class="summary-item-label">กำไรทั้งหมด</div>
+        <div class="summary-item-value" id="summaryTotalProfit">—</div>
+      </div>
+      <div class="summary-item bordered">
+        <div class="summary-item-label">จำนวนลิตรรวม</div>
+        <div class="summary-item-value" id="summaryTotalLiters">—</div>
+      </div>
+    </div>
+
+    <!-- fuel breakdown table -->
+    <section style="margin-top:64px">
+      <div class="section-hd">
+        <span class="eyebrow">รายละเอียดตามประเภทเชื้อเพลิง</span>
+      </div>
+      <div id="fuelBreakdown"></div>
+    </section>
+
+    <!-- nozzle breakdown table -->
+    <section style="margin-top:56px">
+      <div class="section-hd">
+        <span class="eyebrow">ปริมาณแต่ละหัวจ่าย</span>
+      </div>
+      <div id="nozzleBreakdown"></div>
+    </section>
+  </div>
+
+  <footer class="page-footer">
+    <p><strong>บีซี ปิโตรเลียม</strong></p>
+    <p>40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110</p>
+  </footer>
+</main>
+
+<!-- INVENTORY SETTINGS MODAL -->
+<div id="inventorySettingsModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <span class="modal-ttl">ตั้งค่าคลังน้ำมัน</span>
+      <button class="modal-x" onclick="document.getElementById('inventorySettingsModal').classList.remove('active')">×</button>
+    </div>
+    <div id="inventorySettingsBody"></div>
+    <button class="btn btn-primary" style="margin-top:32px;width:100%" onclick="saveInventorySettings()">บันทึกการตั้งค่า</button>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/daily.js"></script>
+<script>
+  Auth.requireAuth();
+
+  // live clock
+  const tick = () => document.getElementById('liveClock').textContent = new Date().toTimeString().slice(0,5);
+  tick(); setInterval(tick, 1000);
+
+  // user dropdown
+  document.getElementById('userProfileBtn').addEventListener('click', () => {
+    document.getElementById('userDropdown').classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.user-profile-container'))
+      document.getElementById('userDropdown').classList.remove('open');
+  });
+
+  Auth.setupTopBar();
+
+  // date labels
+  const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const now = new Date();
+  document.getElementById('headerDate').textContent =
+    `${now.getDate()} ${THAI_MONTHS[now.getMonth()]} ${now.getFullYear()+543}`;
+  document.getElementById('autoSaveStatus').textContent = '● บันทึกอัตโนมัติ ' + now.toTimeString().slice(0,5);
+  document.getElementById('tankUpdateTime').textContent = `ณ ${now.toTimeString().slice(0,5)}`;
+
+  // Restyle daily.js inventory cards — 3 cards side by side
+  const _invContainer = document.getElementById('inventoryContainer');
+  _invContainer.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:16px;';
+  const _invObserver = new MutationObserver(() => {
+    _invContainer.querySelectorAll('.inventory-card:not([data-restyled])').forEach(card => {
+      card.setAttribute('data-restyled', '1');
+      const fuelType = ['b7','e91','e95'].find(f => card.classList.contains(f)) || 'b7';
+      const isLow = card.classList.contains('danger');
+      const title   = (card.querySelector('.inventory-title')?.textContent || '').trim();
+      const value   = (card.querySelector('.inventory-value')?.textContent || '').trim();
+      const reorder = (card.querySelector('div[style*="0.8rem"]')?.textContent || '').trim();
+
+      Object.assign(card.style, {
+        display: 'block',
+        background: 'var(--surface)',
+        border: '1px solid var(--line-soft)',
+        borderTop: `3px solid var(--fuel-${fuelType})`,
+        borderRadius: 'var(--r-2)',
+        padding: '20px',
+        boxShadow: 'none',
+        animation: 'none',
+      });
+      card.innerHTML = `
+        <div style="font-size:13px;color:var(--ink-3);margin-bottom:6px;">${title}</div>
+        <div style="font-family:var(--f-mono);font-size:26px;font-weight:300;letter-spacing:-0.02em;
+          font-variant-numeric:tabular-nums;color:${isLow ? 'var(--rust)' : 'var(--ink)'};">${value}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+          <span style="font-size:12px;color:var(--ink-3);">${reorder}</span>
+          <span class="fuel-tag ${fuelType}">${isLow ? 'ใกล้หมด' : 'ปกติ'}</span>
+        </div>`;
+    });
+  });
+  _invObserver.observe(_invContainer, { childList: true, subtree: true });
+</script>
+</body>
+</html>

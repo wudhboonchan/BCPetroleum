@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการบัญชี - BC PETROLEUM V2</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"> -->
+    <style>
+        /* ACCOUNTING PAGE STYLES - CLEAN LIGHT THEME */
+        .accounting-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .accounting-container {
+                padding: 0 !important;
+                width: 100%;
+                overflow-x: hidden;
+                margin: 0;
+            }
+        }
+
+        /* BALANCE CARDS GRID */
+        .balance-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1400px) {
+            .balance-cards-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .balance-cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* QUICK ENTRY GRID */
+        .quick-entry-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        @media (max-width: 1200px) {
+            .quick-entry-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .quick-entry-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .quick-entry-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .quick-entry-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        .quick-entry-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quick-entry-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+        }
+
+        .quick-entry-desc {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        /* TRANSACTIONS LIST */
+        .transaction-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        @media (max-width: 640px) {
+            .transaction-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .transaction-item>div:last-child {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+                border-top: 1px solid #f1f5f9;
+            }
+        }
+
+        .transaction-item:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-category {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+            min-height: 2.6em;
+            /* Ensure space for 2 lines */
+            line-height: 1.3;
+        }
+
+        .transaction-desc {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .transaction-date {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .transaction-amount {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .transaction-amount.income {
+            color: #10b981;
+        }
+
+        .transaction-amount.expense {
+            color: #ef4444;
+        }
+
+        .delete-btn {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #fecaca;
+            transform: scale(1.05);
+        }
+
+        /* MODAL STYLES */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 600px;
+            width: 90%;
+            margin: 2rem;
+            padding: 2rem;
+            border-radius: 16px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #64748b;
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #1e293b;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: #f8fafc;
+        }
+
+        .btn-save {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            font-weight: 700;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.125rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-save:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-1px);
+        }
+
+        .section-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .date-selector {
+            max-width: 300px;
+            margin-bottom: 1.5rem;
+        }
+
+        /* DETAILS TABLE */
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .details-table th {
+            background: #f1f5f9;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .details-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            color: #1e293b;
+        }
+
+        .details-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-success {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .text-danger {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        /* BOOTSTRAP TOOLTIP STYLING */
+        .tooltip-inner {
+            background-color: #1F2937 !important;
+            color: #FFFFFF !important;
+            font-size: 1.05rem !important;
+            padding: 12px 18px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2) !important;
+            max-width: 400px !important;
+            line-height: 1.5 !important;
+            text-align: left !important;
+        }
+
+        .tooltip.show {
+            opacity: 1 !important;
+        }
+
+        .bs-tooltip-top .tooltip-arrow::before,
+        .bs-tooltip-auto[data-popper-placement^=top] .tooltip-arrow::before {
+            border-top-color: #1F2937 !important;
+        }
+
+        .bs-tooltip-bottom .tooltip-arrow::before,
+        .bs-tooltip-auto[data-popper-placement^=bottom] .tooltip-arrow::before {
+            border-bottom-color: #1F2937 !important;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+        }
+
+
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* FIX NAVBAR CONFLICT WITH BOOTSTRAP */
+        .top-bar-nav .nav-link {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            padding: 0.5rem 1rem !important;
+            color: inherit !important;
+            text-decoration: none !important;
+            gap: 0.5rem !important;
+        }
+
+        .top-bar-nav {
+            display: flex !important;
+            gap: 0.5rem !important;
+            align-items: center !important;
+        }
+
+        /* ENLARGE DELETE BUTTON IN TABLE */
+        .btn-delete {
+            background-color: #EF4444;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem !important;
+            /* Larger padding */
+            border-radius: 6px;
+            font-size: 0.95rem !important;
+            /* Larger font */
+            cursor: pointer;
+            transition: all 0.2s;
+            line-height: 1.5;
+        }
+
+        .btn-delete:hover {
+            background-color: #DC2626;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        }
+    </style>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon-v2.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-v2.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v2.png">
+</head>
+
+<body style="font-family: 'Bai Jamjuree', 'Sarabun', 'Inter', sans-serif;">
+    <!-- TOP BAR NAVIGATION -->
+    <header class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-brand">
+                <span class="brand-icon">⛽</span>
+                <span class="brand-name">BC PETROLEUM</span>
+            </div>
+            <nav class="top-bar-nav">
+                <a href="/index.html" class="nav-link">
+                    <span class="nav-link-icon">📊</span>
+                    <span class="nav-link-text">แดชบอร์ด</span>
+                </a>
+                <a href="/daily.html" class="nav-link">
+                    <span class="nav-link-icon">📝</span>
+                    <span class="nav-link-text">จัดการรายวัน</span>
+                </a>
+                <a href="/credit.html" class="nav-link">
+                    <span class="nav-link-icon">💳</span>
+                    <span class="nav-link-text">เงินเชื่อ</span>
+                </a>
+                <a href="/cash.html" class="nav-link">
+                    <span class="nav-link-icon">💵</span>
+                    <span class="nav-link-text">เงินสด</span>
+                </a>
+                <a href="/accounting.html" class="nav-link active">
+                    <span class="nav-link-icon">💰</span>
+                    <span class="nav-link-text">บัญชี</span>
+                </a>
+                <a href="/customers.html" class="nav-link">
+                    <span class="nav-link-icon">👥</span>
+                    <span class="nav-link-text">ลูกค้า</span>
+                </a>
+                <a href="/reports.html" class="nav-link">
+                    <span class="nav-link-icon">📈</span>
+                    <span class="nav-link-text">รายงาน</span>
+                </a>
+            </nav>
+            <div class="top-bar-actions">
+                <button class="menu-toggle" id="menuToggle" aria-label="Toggle Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="user-profile-container">
+                    <div class="user-profile" id="userProfileBtn">
+                        <div class="user-avatar" id="userAvatar">W</div>
+                        <div class="user-info">
+                            <div class="user-name" id="userName">ผู้ใช้</div>
+                            <div class="user-role" id="userRole">User</div>
+                        </div>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="#" class="dropdown-item" id="logoutBtn">
+                            <span class="dropdown-icon">🚪</span>
+                            <span>ออกจากระบบ</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="page-header">
+            <div class="page-header-content">
+                <h1 class="page-title">จัดการบัญชีรายรับรายจ่าย</h1>
+                <p class="page-subtitle" id="currentDate">กำลังโหลด...</p>
+            </div>
+        </div>
+
+        <div class="accounting-container">
+
+            <!-- BALANCE CARDS -->
+            <!-- BALANCE CARDS -->
+            <div class="balance-cards-grid">
+                <!-- Cash -->
+                <div class="stat-card" onclick="showAccountDetails('cash')" style="cursor: pointer;">
+                    <div class="stat-icon">💵</div>
+                    <div class="stat-content">
+                        <div class="stat-label">เงินสดหมุนเวียน</div>
+                        <div class="stat-value" id="cashBalance">฿0.00</div>
+                    </div>
+                </div>
+
+                <!-- Profit -->
+                <div class="stat-card" onclick="showAccountDetails('profit')" style="cursor: pointer;">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <div class="stat-label">เงินกำไรสะสม</div>
+                        <div class="stat-value" id="profitBalance">฿0.00</div>
+                    </div>
+                </div>
+
+                <!-- Bank -->
+                <div class="stat-card" onclick="showAccountDetails('bank')" style="cursor: pointer;">
+                    <div class="stat-icon">🏦</div>
+                    <div class="stat-content">
+                        <div class="stat-label">บัญชีธนาคาร<br></div>
+                        <div class="stat-value" id="bankBalance">฿0.00</div>
+                    </div>
+                </div>
+
+                <!-- Receivables -->
+                <div class="stat-card" onclick="showReceivablesDetails()" style="cursor: pointer;">
+                    <div class="stat-icon">📥</div>
+                    <div class="stat-content">
+                        <div class="stat-label">เป็นลูกหนี้<br>(ค้างค่าลงทุน)</div>
+                        <div class="stat-value" id="receivablesBalance">฿0.00</div>
+                    </div>
+                </div>
+
+                <!-- Payables -->
+                <div class="stat-card" onclick="showPayablesDetails()" style="cursor: pointer;">
+                    <div class="stat-icon">📤</div>
+                    <div class="stat-content">
+                        <div class="stat-label">เป็นเจ้าหนี้<br>(เครดิตลูกค้า)</div>
+                        <div class="stat-value" id="payablesBalance">฿0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUICK ENTRY SECTION -->
+            <div class="section-card">
+                <div class="section-header">
+                    <span>➕</span>
+                    <span>เพิ่มรายการธุรกรรม</span>
+                </div>
+                <div class="quick-entry-grid">
+                    <div class="quick-entry-card" onclick="openModal('fuelInvestment')">
+                        <div class="quick-entry-icon">⛽</div>
+                        <div class="quick-entry-title">การลงทุนน้ำมัน</div>
+                        <div class="quick-entry-desc">บันทึกการซื้อน้ำมัน</div>
+                    </div>
+                    <div class="quick-entry-card" onclick="openModal('depositBank')">
+                        <div class="quick-entry-icon">💸</div>
+                        <div class="quick-entry-title">ฝากเงินธนาคาร</div>
+                        <div class="quick-entry-desc">โอนจากเงินสดไปธนาคาร</div>
+                    </div>
+                    <div class="quick-entry-card" onclick="openModal('electricity')">
+                        <div class="quick-entry-icon">💡</div>
+                        <div class="quick-entry-title">ค่าไฟฟ้า</div>
+                        <div class="quick-entry-desc">หักจากเงินสดหมุนเวียน</div>
+                    </div>
+                    <div class="quick-entry-card" onclick="openModal('waterPurchase')">
+                        <div class="quick-entry-icon">💧</div>
+                        <div class="quick-entry-title">น้ำดื่มสมนาคุณ</div>
+                        <div class="quick-entry-desc">บันทึกเป็นลูกหนี้</div>
+                    </div>
+                    <div class="quick-entry-card" onclick="openModal('debtPayment')">
+                        <div class="quick-entry-icon">💸</div>
+                        <div class="quick-entry-title">ชำระหนี้</div>
+                        <div class="quick-entry-desc">จ่ายค่าน้ำมัน/น้ำดื่ม/เงินกู้ยืม</div>
+                    </div>
+                    <div class="quick-entry-card" onclick="openModal('other')">
+                        <div class="quick-entry-icon">📝</div>
+                        <div class="quick-entry-title">รายการอื่นๆ</div>
+                        <div class="quick-entry-desc">รายรับ/รายจ่ายอื่นๆ</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DATE SELECTOR -->
+            <div class="section-card">
+                <div class="section-header">
+                    <span>📅</span>
+                    <span>รายการธุรกรรมประจำวัน</span>
+                </div>
+                <div class="date-selector">
+                    <label class="form-label">เลือกวันที่</label>
+                    <input type="date" lang="en-GB" class="form-control" id="selectedDate">
+                </div>
+                <div id="transactionsList"></div>
+            </div>
+
+        </div>
+
+        <footer class="page-footer">
+            <p><strong>บีซี ปิโตรเลียม</strong></p>
+            <p>40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110 | โทร: 096-236-9153</p>
+        </footer>
+    </main>
+
+    <!-- MODALS -->
+
+    <!-- Profit Transfer Modal -->
+    <div id="profitTransferModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">💎 หักเก็บกำไร</h2>
+                <button class="modal-close" onclick="closeModal('profitTransfer')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงิน (บาท)</label>
+                <input type="number" class="form-control" id="profitTransferAmount" step="0.01" min="0"
+                    placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+                <input type="text" class="form-control" id="profitTransferNote" placeholder="ระบุรายละเอียดเพิ่มเติม">
+            </div>
+            <button class="btn-save" onclick="saveProfitTransfer()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Fuel Investment Modal -->
+    <div id="fuelInvestmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">⛽ การลงทุนน้ำมัน</h2>
+                <button class="modal-close" onclick="closeModal('fuelInvestment')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">ประเภทน้ำมัน</label>
+                <select class="form-control" id="fuelType">
+                    <option value="e91">แก๊สโซฮอล์ 91</option>
+                    <option value="e95">แก๊สโซฮอล์ 95</option>
+                    <option value="b7">ดีเซล B7</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนลิตร</label>
+                <input type="number" class="form-control" id="fuelLiters" step="0.001" min="0" placeholder="0.000">
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงินรวม (บาท)</label>
+                <input type="number" class="form-control" id="fuelTotalAmount" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label class="form-label">สถานะการจ่ายเงิน</label>
+                <select class="form-control" id="fuelPaymentStatus" onchange="toggleFuelPaymentMethod()">
+                    <option value="unpaid">ยังไม่ได้จ่าย</option>
+                    <option value="paid">จ่ายแล้ว</option>
+                </select>
+            </div>
+            <div class="form-group" id="fuelPaymentMethodGroup" style="display: none;">
+                <label class="form-label">วิธีจ่ายเงิน</label>
+                <select class="form-control" id="fuelPaymentMethod">
+                    <option value="cash">เงินสด</option>
+                    <option value="transfer">โอนธนาคาร</option>
+                </select>
+            </div>
+            <button class="btn-save" onclick="saveFuelInvestment()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Deposit Bank Modal -->
+    <div id="depositBankModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">💸 ฝากเงินธนาคาร</h2>
+                <button class="modal-close" onclick="closeModal('depositBank')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงิน (บาท)</label>
+                <input type="number" class="form-control" id="depositAmount" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+                <input type="text" class="form-control" id="depositNote" placeholder="ระบุรายละเอียดเพิ่มเติม">
+            </div>
+            <button class="btn-save" onclick="saveDeposit()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Electricity Modal -->
+    <div id="electricityModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">💡 ค่าไฟฟ้า</h2>
+                <button class="modal-close" onclick="closeModal('electricity')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">ประจำเดือน</label>
+                <select class="form-control" id="electricityMonth">
+                    <option value="มกราคม">มกราคม</option>
+                    <option value="กุมภาพันธ์">กุมภาพันธ์</option>
+                    <option value="มีนาคม">มีนาคม</option>
+                    <option value="เมษายน">เมษายน</option>
+                    <option value="พฤษภาคม">พฤษภาคม</option>
+                    <option value="มิถุนายน">มิถุนายน</option>
+                    <option value="กรกฎาคม">กรกฎาคม</option>
+                    <option value="สิงหาคม">สิงหาคม</option>
+                    <option value="กันยายน">กันยายน</option>
+                    <option value="ตุลาคม">ตุลาคม</option>
+                    <option value="พฤศจิกายน">พฤศจิกายน</option>
+                    <option value="ธันวาคม">ธันวาคม</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงิน (บาท)</label>
+                <input type="number" class="form-control" id="electricityAmount" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <button class="btn-save" onclick="saveElectricity()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Water Purchase Modal -->
+    <div id="waterPurchaseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">💧 น้ำดื่มสมนาคุณ</h2>
+                <button class="modal-close" onclick="closeModal('waterPurchase')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนแพค</label>
+                <input type="number" class="form-control" id="waterPacks" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">ราคาต่อแพค (บาท)</label>
+                <input type="number" class="form-control" id="waterCostPerPack" step="0.01" value="60"
+                    placeholder="60.00">
+            </div>
+            <button class="btn-save" onclick="saveWaterPurchase()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Debt Payment Modal -->
+    <div id="debtPaymentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">💸 ชำระหนี้</h2>
+                <button class="modal-close" onclick="closeModal('debtPayment')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">ประเภทหนี้</label>
+                <select class="form-control" id="debtType" onchange="loadDebtItems()">
+                    <option value="">-- เลือกประเภทหนี้ --</option>
+                    <option value="fuel">⛽ ค่าน้ำมัน</option>
+                    <option value="water">💧 ค่าน้ำดื่ม</option>
+                    <option value="loan">💰 เงินกู้ยืม</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">เลือกรายการหนี้</label>
+                <select class="form-control" id="debtItem">
+                    <option value="">-- เลือกรายการ --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงิน (บาท)</label>
+                <input type="number" class="form-control" id="debtPaymentAmount" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label class="form-label">ชำระจากบัญชี</label>
+                <select class="form-control" id="debtPaymentAccount">
+                    <option value="cash">เงินสด</option>
+                    <option value="bank">ธนาคาร</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+                <input type="text" class="form-control" id="debtPaymentNote" placeholder="ระบุรายละเอียดเพิ่มเติม">
+            </div>
+            <button class="btn-save" onclick="saveDebtPayment()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Other Transaction Modal -->
+    <div id="otherModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📝 รายการอื่นๆ</h2>
+                <button class="modal-close" onclick="closeModal('other')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">ประเภท</label>
+                <select class="form-control" id="otherType" onchange="toggleOtherType()">
+                    <option value="income">📈 รายรับอื่นๆ</option>
+                    <option value="expense">📉 รายจ่ายอื่นๆ</option>
+                    <option value="loan">💰 เงินกู้ยืมชั่วคราว</option>
+                </select>
+            </div>
+            <div class="form-group" id="otherAccountGroup">
+                <label class="form-label">บัญชีที่เกี่ยวข้อง</label>
+                <select class="form-control" id="otherAccount">
+                    <option value="cash">เงินสดหมุนเวียน</option>
+                    <option value="profit">เงินกำไร</option>
+                    <option value="bank">บัญชีธนาคาร</option>
+                </select>
+            </div>
+            <div class="form-group" id="loanAccountGroup" style="display: none;">
+                <label class="form-label">เงินเข้าบัญชี</label>
+                <select class="form-control" id="loanAccount">
+                    <option value="cash">เงินสดหมุนเวียน</option>
+                    <option value="bank">บัญชีธนาคาร</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" id="otherDescriptionLabel">รายละเอียด</label>
+                <input type="text" class="form-control" id="otherDescription" placeholder="ระบุรายละเอียด">
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนเงิน (บาท)</label>
+                <input type="number" class="form-control" id="otherAmount" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group" id="loanNoteGroup" style="display: none;">
+                <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+                <input type="text" class="form-control" id="loanNote" placeholder="ระบุหมายเหตุเพิ่มเติม">
+            </div>
+            <button class="btn-save" onclick="saveOther()">บันทึก</button>
+        </div>
+    </div>
+
+    <!-- Account Details Modal -->
+    <div id="accountDetailsModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="accountDetailsTitle">รายละเอียดบัญชี</h2>
+                <button class="modal-close" onclick="closeModal('accountDetails')">×</button>
+            </div>
+            <div style="max-height: 500px; overflow-y: auto;">
+                <table class="details-table">
+                    <thead>
+                        <tr>
+                            <th>วันที่</th>
+                            <th>รายละเอียด</th>
+                            <th class="text-right">เงินเข้า</th>
+                            <th class="text-right">เงินออก</th>
+                            <th class="text-right">ยอดคงเหลือ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountDetailsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debt Details Modal -->
+    <div id="debtDetailsModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="debtDetailsTitle">รายละเอียด</h2>
+                <button class="modal-close" onclick="closeModal('debtDetails')">×</button>
+            </div>
+            <div style="max-height: 500px; overflow-y: auto;">
+                <table class="details-table">
+                    <thead>
+                        <tr>
+                            <th>วันที่</th>
+                            <th>รายละเอียด</th>
+                            <th class="text-right">จำนวนเงิน</th>
+                            <th class="text-right">สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="debtDetailsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/accounting.js"></script>
+    <script>
+        Auth.requireAuth();
+        Auth.setupTopBar();
+
+        // Set today's date
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('selectedDate').value = today;
+
+        // Modal functions
+        function openModal(modalName) {
+            const modal = document.getElementById(modalName + 'Modal');
+            if (modal) {
+                modal.classList.add('active');
+            }
+        }
+
+        function closeModal(modalName) {
+            const modal = document.getElementById(modalName + 'Modal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        // Close modal on background click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Toggle fuel payment method visibility
+        function toggleFuelPaymentMethod() {
+            const status = document.getElementById('fuelPaymentStatus').value;
+            const methodGroup = document.getElementById('fuelPaymentMethodGroup');
+            methodGroup.style.display = status === 'paid' ? 'block' : 'none';
+        }
+    </script>
+</body>
+
+</html>

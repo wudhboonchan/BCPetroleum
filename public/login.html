@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ - BC PETROLEUM</title>
+    <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+
+    .login-container { width: 100%; max-width: 400px; }
+
+    .login-box {
+      background: var(--surface);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--r-4);
+      padding: 48px;
+    }
+
+    .login-logo { margin-bottom: 40px; }
+
+    .logo-circle {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--accent); margin-bottom: 16px;
+    }
+
+    .login-title {
+      font-size: 20px; font-weight: 500;
+      letter-spacing: -0.01em; color: var(--ink);
+      margin-bottom: 4px; white-space: nowrap;
+    }
+
+    .login-subtitle { font-size: 13px; color: var(--ink-3); }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 24px; }
+
+    .form-label {
+      font-family: var(--f-mono); font-size: 10px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .input-with-icon { position: relative; }
+
+    .form-control {
+      width: 100%;
+      background: var(--bg-deep);
+      border: 1px solid var(--line);
+      border-radius: var(--r-1);
+      padding: 11px 14px;
+      font-size: 14px; color: var(--ink);
+      font-family: var(--f-body);
+      transition: border-color 0.12s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--ink-2);
+      border-bottom-color: var(--ink-2);
+    }
+
+    .input-icon { display: none; }
+    .input-with-icon .form-control { padding-left: 14px; }
+
+    .password-toggle {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--ink-3);
+      cursor: pointer; font-size: 13px; padding: 4px;
+      font-family: var(--f-mono);
+    }
+
+    .password-toggle:hover { color: var(--ink-2); }
+
+    .login-btn {
+      width: 100%; background: var(--ink); color: var(--bg);
+      border: none; border-radius: 999px;
+      padding: 12px; font: inherit; font-size: 14px; font-weight: 500;
+      cursor: pointer; margin-top: 8px;
+      transition: opacity 0.15s;
+    }
+
+    .login-btn:hover { opacity: 0.85; }
+
+    .version-badge {
+      position: fixed; bottom: 20px; right: 20px;
+      font-family: var(--f-mono); font-size: 10px;
+      letter-spacing: 0.1em; color: var(--ink-3);
+    }
+  </style>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon-v2.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-v2.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v2.png">
+</head>
+
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="logo-circle"></div>
+        <h1 class="login-title">BC Petroleum</h1>
+        <p class="login-subtitle">ระบบจัดการสถานีน้ำมัน</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="username">ชื่อผู้ใช้</label>
+          <div class="input-with-icon">
+            <input type="text" class="form-control" id="username" placeholder="username" required autocomplete="username">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">รหัสผ่าน</label>
+          <div class="input-with-icon">
+            <input type="password" class="form-control" id="password" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="password-toggle" id="togglePassword">แสดง</button>
+          </div>
+        </div>
+
+        <button type="submit" class="login-btn">เข้าสู่ระบบ</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="version-badge">v2.0</div>
+
+    <script src="/js/utils.js"></script>
+    <script>
+        // Password toggle functionality
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.textContent = type === 'password' ? 'แสดง' : 'ซ่อน';
+        });
+
+        // Back to V1 logic removed
+
+        // Handle login form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                Toast.error('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+                return;
+            }
+
+            try {
+                Loading.show();
+                const result = await Auth.login(username, password);
+
+                if (result.success) {
+                    Toast.success('เข้าสู่ระบบสำเร็จ!');
+                    setTimeout(() => {
+                        window.location.href = '/index.html';
+                    }, 500);
+                } else {
+                    Toast.error(result.error || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                Toast.error('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+            } finally {
+                Loading.hide();
+            }
+        });
+
+        // Check if already logged in
+        if (Auth.isAuthenticated()) {
+            window.location.href = '/index.html';
+        }
+
+        // Show logout message if redirected from logout
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('logout') === 'true') {
+            setTimeout(() => {
+                Toast.info('ออกจากระบบเรียบร้อยแล้ว');
+            }, 300);
+        }
+    </script>
+</body>
+
+</html>

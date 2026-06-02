@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการเงินสด - BC PETROLEUM V2</title>
+    <link rel="stylesheet" href="/css/style.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon-v2.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-v2.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v2.png">
+</head>
+
+<body>
+    <!-- TOP BAR NAVIGATION -->
+    <header class="top-bar">
+        <div class="top-bar-container">
+            <div class="top-bar-brand">
+                <span class="brand-icon">⛽</span>
+                <span class="brand-name">BC PETROLEUM</span>
+            </div>
+            <nav class="top-bar-nav">
+                <a href="/index.html" class="nav-link">
+                    <span class="nav-link-icon">📊</span>
+                    <span class="nav-link-text">แดชบอร์ด</span>
+                </a>
+                <a href="/daily.html" class="nav-link">
+                    <span class="nav-link-icon">📝</span>
+                    <span class="nav-link-text">จัดการรายวัน</span>
+                </a>
+                <a href="/credit.html" class="nav-link">
+                    <span class="nav-link-icon">💳</span>
+                    <span class="nav-link-text">เงินเชื่อ</span>
+                </a>
+                <a href="/cash.html" class="nav-link active">
+                    <span class="nav-link-icon">💵</span>
+                    <span class="nav-link-text">เงินสด</span>
+                </a>
+                <a href="/accounting.html" class="nav-link">
+                    <span class="nav-link-icon">💰</span>
+                    <span class="nav-link-text">บัญชี</span>
+                </a>
+                <a href="/customers.html" class="nav-link">
+                    <span class="nav-link-icon">👥</span>
+                    <span class="nav-link-text">ลูกค้า</span>
+                </a>
+                <a href="/reports.html" class="nav-link">
+                    <span class="nav-link-icon">📈</span>
+                    <span class="nav-link-text">รายงาน</span>
+                </a>
+            </nav>
+            <div class="top-bar-actions">
+                <button class="menu-toggle" id="menuToggle" aria-label="Toggle Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="user-profile-container">
+                    <div class="user-profile" id="userProfileBtn">
+                        <div class="user-avatar" id="userAvatar">W</div>
+                        <div class="user-info">
+                            <div class="user-name" id="userName">ผู้ใช้</div>
+                            <div class="user-role" id="userRole">User</div>
+                        </div>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="#" class="dropdown-item" id="logoutBtn">
+                            <span class="dropdown-icon">🚪</span>
+                            <span>ออกจากระบบ</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="page-header">
+            <div class="page-header-content">
+                <h1 class="page-title">จัดการเงินสด ปิดยอดรายวัน</h1>
+                <p class="page-subtitle" id="currentDate">กำลังโหลด...</p>
+            </div>
+            <div class="page-header-actions">
+                <input type="date" lang="en-GB" id="selectedDate" class="form-control" style="width: auto;">
+            </div>
+        </div>
+
+        <style>
+            /* CLEAN MINIMAL LIGHT THEME */
+            .cash-page-container {
+                max-width: 1600px;
+                margin: 0 auto;
+                padding: 1.5rem;
+            }
+
+            @media (max-width: 768px) {
+                .cash-page-container {
+                    padding: 1rem !important;
+                    /* Comfortable padding */
+                    width: 100%;
+                    max-width: 100vw;
+                    margin: 0;
+                }
+            }
+
+            /* 2 COLUMN LAYOUT */
+            .cash-main-grid {
+                display: grid;
+                grid-template-columns: 1.2fr 1fr;
+                gap: 2rem;
+                margin-bottom: 2rem;
+            }
+
+            @media (max-width: 1024px) {
+                .cash-main-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            /* SECTION CARDS - CLEAN WHITE */
+            .cash-section {
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            @media (max-width: 480px) {
+                .cash-section {
+                    border-radius: 12px;
+                    margin-bottom: 1rem;
+                    border: 1px solid #e5e7eb !important;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+                    background: white;
+                }
+
+                .cash-section-header {
+                    padding: 1rem;
+                    background: #f9fafb;
+                    border-bottom: 1px solid #e5e7eb;
+                }
+
+                .cash-section-title {
+                    font-size: 1.125rem;
+                    font-weight: 600;
+                }
+            }
+
+            .cash-section-header {
+                background: #f8fafc;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .cash-section-title {
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: #1e293b;
+                margin: 0;
+            }
+
+            .cash-section-body {
+                padding: 1.5rem;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            @media (max-width: 480px) {
+                .cash-section-body {
+                    padding: 1rem !important;
+                }
+            }
+
+            /* CASH COUNTING TABLE */
+            .cash-table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0 0.5rem;
+                table-layout: auto;
+                /* Default */
+            }
+
+            @media (max-width: 480px) {
+                .cash-table {
+                    table-layout: fixed;
+                    /* Force fit on mobile */
+                }
+
+                .cash-table th:nth-child(1),
+                .cash-table td:nth-child(1) {
+                    width: 30%;
+                    /* Badge column */
+                }
+
+                .cash-table th:nth-child(2),
+                .cash-table td:nth-child(2) {
+                    width: 35%;
+                    /* Input column */
+                }
+
+                .cash-table th:nth-child(3),
+                .cash-table td:nth-child(3) {
+                    width: 35%;
+                    /* Value column */
+                }
+            }
+
+            @media (max-width: 768px) {
+
+                .cash-table th,
+                .cash-table td {
+                    padding: 0.5rem;
+                }
+
+                .denomination-badge {
+                    min-width: 50px;
+                    font-size: 0.9rem;
+                    padding: 0.4rem 0.6rem;
+                }
+            }
+
+            .cash-table-header th {
+                padding: 0.875rem;
+                text-align: left;
+                text-indent: 0;
+                /* Remove indent */
+                font-size: 1rem;
+                font-weight: 600;
+            }
+
+            @media (max-width: 480px) {
+                .cash-table-header th {
+                    text-indent: 0;
+                    padding: 0.5rem 0.4rem;
+                    /* Balanced padding */
+                    font-size: 0.85rem;
+                }
+
+                .cash-table-row td {
+                    padding: 0.5rem 0.4rem;
+                    /* Balanced padding */
+                }
+
+                .denomination-badge {
+                    min-width: 40px !important;
+                    font-size: 0.85rem !important;
+                    padding: 0.25rem 0.5rem !important;
+                }
+
+                .cash-input {
+                    padding: 0.4rem !important;
+                    font-size: 1rem !important;
+                    max-width: 80px !important;
+                }
+
+                .cash-value {
+                    font-size: 0.95rem !important;
+                }
+
+                .cash-section-body {
+                    padding: 0.75rem !important;
+                }
+            }
+
+            .cash-table-header th:nth-child(2) {
+                text-align: center;
+            }
+
+            .cash-table-header th:nth-child(3) {
+                text-align: right;
+            }
+
+            .cash-table-row {
+                background: #fafafa;
+                transition: background 0.2s;
+            }
+
+            .cash-table-row:hover {
+                background: #f5f5f5;
+            }
+
+            .cash-table-row td {
+                padding: 0.875rem;
+                border-top: 1px solid #f1f5f9;
+                border-bottom: 1px solid #f1f5f9;
+            }
+
+            .cash-table-row td:first-child {
+                border-left: 1px solid #f1f5f9;
+                border-radius: 8px 0 0 8px;
+            }
+
+            .cash-table-row td:last-child {
+                border-right: 1px solid #f1f5f9;
+                border-radius: 0 8px 8px 0;
+            }
+
+            .denomination-badge {
+                display: inline-block;
+                padding: 0.5rem 0.875rem;
+                border-radius: 6px;
+                color: white;
+                font-weight: 700;
+                font-size: 1rem;
+                min-width: 70px;
+                text-align: center;
+            }
+
+            .badge-1000 {
+                background: linear-gradient(135deg, #78716c 0%, #57534e 100%);
+            }
+
+            .badge-500 {
+                background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+            }
+
+            .badge-100 {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            }
+
+            .badge-50 {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            }
+
+            .badge-20 {
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            }
+
+            .badge-coin {
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                font-size: 0.8rem;
+                min-width: 50px;
+            }
+
+            .cash-input {
+                width: 100%;
+                max-width: 130px;
+                background: white;
+                border: 2px solid #e2e8f0;
+                color: #1e293b;
+                padding: 0.625rem;
+                border-radius: 6px;
+                text-align: center;
+                font-size: 1.25rem;
+                font-weight: 600;
+                transition: all 0.2s;
+            }
+
+            .cash-input:focus {
+                outline: none;
+                border-color: #3b82f6;
+                background: #f8fafc;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+            .cash-value {
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #059669;
+                text-align: right;
+            }
+
+            /* SUMMARY BOX */
+            .cash-summary-box {
+                background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+                border: 2px solid #10b981;
+                border-radius: 12px;
+                padding: 1.5rem;
+                margin-top: 1.5rem;
+                box-sizing: border-box;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            @media (max-width: 480px) {
+                .cash-summary-box {
+                    padding: 1.25rem !important;
+                    margin-top: 1rem;
+                    border: 2px solid #10b981 !important;
+                    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.15) !important;
+                    border-radius: 12px;
+                    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+                }
+            }
+
+            .summary-line {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.5rem 0;
+                font-size: 1.125rem;
+                color: #1e293b;
+                gap: 1rem;
+                /* Add gap between label and value */
+            }
+
+            .summary-line.total {
+                border-top: 2px dashed #10b981;
+                margin-top: 0.5rem;
+                padding-top: 1rem;
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #059669;
+            }
+
+            @media (max-width: 480px) {
+                .summary-line {
+                    font-size: 0.9rem !important;
+                    padding: 0.25rem 0;
+                    gap: 0.5rem;
+                    /* Reduce gap on mobile */
+                }
+
+                .summary-line.total {
+                    font-size: 1.1rem !important;
+                    padding-top: 0.5rem;
+                    font-weight: 700;
+                }
+
+                .summary-line.deduction {
+                    font-size: 0.85rem !important;
+                }
+            }
+
+            .summary-line.deduction {
+                color: #64748b;
+                font-size: 1rem;
+            }
+
+            /* FUEL SECTION */
+            .fuel-input-row {
+                background: #fafafa;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                transition: all 0.2s;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            @media (max-width: 768px) {
+                .fuel-input-row {
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 0.5rem;
+                }
+
+                .fuel-badge-wrapper {
+                    justify-content: space-between;
+                }
+            }
+
+            .fuel-input-row:hover {
+                background: #f5f5f5;
+                border-color: #cbd5e1;
+            }
+
+            .fuel-badge-wrapper {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                min-width: 140px;
+            }
+
+            .fuel-type-badge {
+                padding: 0.625rem 0.875rem;
+                border-radius: 6px;
+                color: white;
+                font-weight: 700;
+                font-size: 1rem;
+                min-width: 75px;
+                text-align: center;
+            }
+
+            .fuel-91 {
+                background: #dc2626;
+            }
+
+            .fuel-95 {
+                background: #16a34a;
+            }
+
+            .fuel-b7 {
+                background: #2563eb;
+            }
+
+            .fuel-price {
+                font-size: 0.875rem;
+                color: #64748b;
+            }
+
+            .fuel-amount-input {
+                flex: 1;
+                background: white;
+                border: 2px solid #e2e8f0;
+                color: #1e293b;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-size: 1.125rem;
+                font-weight: 600;
+                text-align: right;
+            }
+
+            .fuel-amount-input:focus {
+                outline: none;
+                border-color: #3b82f6;
+                background: #f8fafc;
+            }
+
+            /* Hide Spinners */
+            .fuel-amount-input::-webkit-outer-spin-button,
+            .fuel-amount-input::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            .fuel-amount-input {
+                appearance: textfield;
+                -moz-appearance: textfield;
+            }
+
+            .fuel-liters {
+                min-width: 90px;
+                text-align: right;
+                color: #64748b;
+                font-size: 1rem;
+            }
+
+            /* BANK TRANSFER */
+            .transfer-input-box {
+                background: #eff6ff;
+                border: 2px solid #3b82f6;
+                border-radius: 8px;
+                padding: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .transfer-currency {
+                font-size: 1.75rem;
+                font-weight: 700;
+                color: #2563eb;
+            }
+
+            .transfer-amount-input {
+                flex: 1;
+                background: transparent;
+                border: none;
+                color: #1e293b;
+                font-size: 1.75rem;
+                font-weight: 700;
+                text-align: right;
+                margin-right: 20px;
+            }
+
+            .transfer-amount-input:focus {
+                outline: none;
+            }
+
+            /* RECONCILIATION SUMMARY */
+            .recon-summary-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.5rem;
+            }
+
+            @media (max-width: 768px) {
+                .recon-summary-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .recon-summary-card {
+                background: white;
+                border: 2px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 1.5rem;
+            }
+
+            .recon-card-title {
+                font-size: 1.25rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 1rem;
+                padding-bottom: 0.75rem;
+                border-bottom: 2px solid #f1f5f9;
+            }
+
+            .recon-main-value {
+                font-size: 2.25rem;
+                font-weight: 700;
+                color: #1e293b;
+                margin-bottom: 1rem;
+            }
+
+            .recon-detail-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.5rem 0;
+                border-bottom: 1px dashed #e2e8f0;
+                font-size: 1rem;
+                color: #475569;
+            }
+
+            .recon-detail-row:last-child {
+                border-bottom: none;
+            }
+
+            .recon-card-revenue {
+                border-left: 4px solid #10b981;
+                background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+            }
+
+            .recon-card-expected {
+                border-left: 4px solid #3b82f6;
+                background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+            }
+
+            .recon-card-difference {
+                border-left: 4px solid #f59e0b;
+                background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+            }
+
+            /* CREDIT PAYMENTS LIST */
+            .credit-payment-item {
+                background: #fafafa;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 0.75rem;
+                margin-bottom: 0.5rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .credit-payment-customer {
+                font-weight: 600;
+                color: #1e293b;
+            }
+
+            .credit-payment-amount {
+                color: #059669;
+                font-weight: 700;
+            }
+
+            /* SAVED FUEL LIST */
+            .saved-fuel-item {
+                background: #fafafa;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 0.75rem;
+                margin-bottom: 0.5rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            /* BUTTONS */
+            .btn-primary-cash {
+                width: 100%;
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                color: white;
+                font-weight: 700;
+                padding: 1rem;
+                border: none;
+                border-radius: 8px;
+                font-size: 1.25rem;
+                cursor: pointer;
+                transition: all 0.2s;
+                box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+            }
+
+            .btn-primary-cash:hover {
+                background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            }
+
+            .btn-secondary-cash {
+                width: 100%;
+                background: white;
+                border: 1px solid #e2e8f0;
+                color: #475569;
+                font-weight: 600;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-size: 1.0625rem;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .btn-secondary-cash:hover {
+                background: #f8fafc;
+                border-color: #cbd5e1;
+            }
+        </style>
+
+        <div class="cash-page-container">
+
+            <div class="cash-main-grid">
+
+                <!-- LEFT: CASH COUNTING -->
+                <div class="cash-section">
+                    <div class="cash-section-header">
+                        <h2 class="cash-section-title">💵 นับเงินสดในกระเป๋า</h2>
+                    </div>
+                    <div class="cash-section-body">
+                        <table class="cash-table">
+                            <thead class="cash-table-header">
+                                <tr>
+                                    <th>ชนิด</th>
+                                    <th>จำนวน</th>
+                                    <th>มูลค่า</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 1000 -->
+                                <tr class="cash-table-row">
+                                    <td><span class="denomination-badge badge-1000">1,000</span></td>
+                                    <td style="text-align: center;">
+                                        <input type="number" id="bills_1000" class="cash-input" placeholder="0">
+                                    </td>
+                                    <td id="value_1000" class="cash-value">฿0</td>
+                                </tr>
+                                <!-- 500 -->
+                                <tr class="cash-table-row">
+                                    <td><span class="denomination-badge badge-500">500</span></td>
+                                    <td style="text-align: center;">
+                                        <input type="number" id="bills_500" class="cash-input" placeholder="0">
+                                    </td>
+                                    <td id="value_500" class="cash-value">฿0</td>
+                                </tr>
+                                <!-- 100 -->
+                                <tr class="cash-table-row">
+                                    <td><span class="denomination-badge badge-100">100</span></td>
+                                    <td style="text-align: center;">
+                                        <input type="number" id="bills_100" class="cash-input" placeholder="0">
+                                    </td>
+                                    <td id="value_100" class="cash-value">฿0</td>
+                                </tr>
+                                <!-- 50 -->
+                                <tr class="cash-table-row">
+                                    <td><span class="denomination-badge badge-50">50</span></td>
+                                    <td style="text-align: center;">
+                                        <input type="number" id="bills_50" class="cash-input" placeholder="0">
+                                    </td>
+                                    <td id="value_50" class="cash-value">฿0</td>
+                                </tr>
+                                <!-- 20 -->
+                                <tr class="cash-table-row">
+                                    <td><span class="denomination-badge badge-20">20</span></td>
+                                    <td style="text-align: center;">
+                                        <input type="number" id="bills_20" class="cash-input" placeholder="0">
+                                    </td>
+                                    <td id="value_20" class="cash-value">฿0</td>
+                                </tr>
+                                <!-- 10 -->
+                                <tr class="cash-table-row">
+                                    <td><span class="denomination-badge badge-coin">เหรียญ 10</span></td>
+                                    <td style="text-align: center;">
+                                        <input type="number" id="coins_10" class="cash-input" placeholder="0">
+                                    </td>
+                                    <td id="value_10" class="cash-value">฿0</td>
+                                </tr>
+                                <!-- 5 -->
+                                <tr class="cash-table-row">
+                                    <td><span class="denomination-badge badge-coin">เหรียญ 5</span></td>
+                                    <td style="text-align: center;">
+                                        <input type="number" id="coins_5" class="cash-input" placeholder="0">
+                                    </td>
+                                    <td id="value_5" class="cash-value">฿0</td>
+                                </tr>
+                                <!-- 2 -->
+                                <tr class="cash-table-row">
+                                    <td><span class="denomination-badge badge-coin">เหรียญ 2</span></td>
+                                    <td style="text-align: center;">
+                                        <input type="number" id="coins_2" class="cash-input" placeholder="0">
+                                    </td>
+                                    <td id="value_2" class="cash-value">฿0</td>
+                                </tr>
+                                <!-- 1 -->
+                                <tr class="cash-table-row">
+                                    <td><span class="denomination-badge badge-coin">เหรียญ 1</span></td>
+                                    <td style="text-align: center;">
+                                        <input type="number" id="coins_1" class="cash-input" placeholder="0">
+                                    </td>
+                                    <td id="value_1" class="cash-value">฿0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="cash-summary-box">
+                            <div class="summary-line">
+                                <span>รวมเงินสดทั้งหมด</span>
+                                <span id="totalCountedCash" style="font-weight: 700; color: #1e293b;">฿0</span>
+                            </div>
+                            <div class="summary-line deduction">
+                                <span>หักเงินทอน</span>
+                                <span>-฿1,000</span>
+                            </div>
+                            <div class="summary-line total">
+                                <span>เงินสดสุทธิ</span>
+                                <span id="netCashSales">฿0</span>
+                            </div>
+                        </div>
+
+                        <button onclick="saveCashRecord()" class="btn-primary-cash" style="margin-top: 1.5rem;">
+                            💾 บันทึกยอดเงินสด
+                        </button>
+                    </div>
+                </div>
+
+                <!-- RIGHT: OTHER INPUTS -->
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+                    <!-- PERSONAL FUEL -->
+                    <div class="cash-section">
+                        <div class="cash-section-header">
+                            <h2 class="cash-section-title">⛽ เติมน้ำมันใช้เอง</h2>
+                        </div>
+                        <div class="cash-section-body">
+                            <!-- B7 -->
+                            <div class="fuel-input-row">
+                                <div class="fuel-badge-wrapper">
+                                    <span class="fuel-type-badge fuel-b7">B7</span>
+                                    <span id="priceB7" class="fuel-price">@ -</span>
+                                </div>
+                                <input type="number" id="fuelB7" class="fuel-amount-input" placeholder="0">
+                                <div id="litersB7" class="fuel-liters">0 ลิตร</div>
+                            </div>
+                            <!-- G91 -->
+                            <div class="fuel-input-row">
+                                <div class="fuel-badge-wrapper">
+                                    <span class="fuel-type-badge fuel-91">91</span>
+                                    <span id="priceE91" class="fuel-price">@ -</span>
+                                </div>
+                                <input type="number" id="fuelE91" class="fuel-amount-input" placeholder="0">
+                                <div id="litersE91" class="fuel-liters">0 ลิตร</div>
+                            </div>
+                            <!-- G95 -->
+                            <div class="fuel-input-row">
+                                <div class="fuel-badge-wrapper">
+                                    <span class="fuel-type-badge fuel-95">95</span>
+                                    <span id="priceE95" class="fuel-price">@ -</span>
+                                </div>
+                                <input type="number" id="fuelE95" class="fuel-amount-input" placeholder="0">
+                                <div id="litersE95" class="fuel-liters">0 ลิตร</div>
+                            </div>
+                            <button onclick="savePersonalFuel()" class="btn-secondary-cash"
+                                style="margin-top: 0.75rem;">
+                                + เพิ่มรายการ
+                            </button>
+                            <div id="personalFuelList" style="margin-top: 1rem;"></div>
+                        </div>
+                    </div>
+
+                    <!-- BANK TRANSFER -->
+                    <div class="cash-section">
+                        <div class="cash-section-header">
+                            <h2 class="cash-section-title">📲 ยอดเงินโอนวันนี้</h2>
+                        </div>
+                        <div class="cash-section-body">
+                            <div class="transfer-input-box">
+                                <span class="transfer-currency">฿</span>
+                                <input type="text" inputmode="numeric" id="bankTransfer" class="transfer-amount-input"
+                                    placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CREDIT PAYMENTS -->
+                    <div class="cash-section" style="flex: 1;">
+                        <div class="cash-section-header">
+                            <h2 class="cash-section-title">💳 รับชำระหนี้ลูกค้าเงินเชื่อ</h2>
+                        </div>
+                        <div class="cash-section-body">
+                            <div id="creditPaymentsList" style="max-height: 300px; overflow-y: auto;">
+                                <div style="text-align: center; padding: 2rem; color: #94a3b8;">
+                                    ไม่มีรายการรับชำระวันนี้
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- RECONCILIATION SUMMARY -->
+            <div class="cash-section">
+                <div class="cash-section-header">
+                    <h2 class="cash-section-title">📊 สรุปยอดปิดบัญชีประจำวัน</h2>
+                </div>
+                <div class="cash-section-body">
+                    <div class="recon-summary-grid">
+
+                        <!-- REVENUE -->
+                        <div class="recon-summary-card recon-card-revenue">
+                            <div class="recon-card-title" style="color: #059669;">1. รายรับจริง</div>
+                            <div class="recon-main-value" id="reconTotalRevenue">฿0.00</div>
+                            <div>
+                                <div class="recon-detail-row">
+                                    <span>เงินสดสุทธิ</span>
+                                    <span id="reconCashSales">฿0</span>
+                                </div>
+                                <div class="recon-detail-row">
+                                    <span>เงินโอน</span>
+                                    <span id="reconBankTransfer">฿0</span>
+                                </div>
+                                <div class="recon-detail-row">
+                                    <span>รับชำระหนี้เงินสด</span>
+                                    <span id="reconCreditPayments">฿0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EXPECTED -->
+                        <div class="recon-summary-card recon-card-expected">
+                            <div class="recon-card-title" style="color: #2563eb;">2. ยอดที่ควรได้รับ</div>
+                            <div class="recon-main-value" id="reconExpectedSales">฿0.00</div>
+                            <div>
+                                <div class="recon-detail-row">
+                                    <span>ยอดขายหัวจ่าย</span>
+                                    <span id="reconNozzleSales">฿0</span>
+                                </div>
+                                <div class="recon-detail-row" style="color: #dc2626;">
+                                    <span>- ขายเชื่อ</span>
+                                    <span id="reconCreditSales">฿0</span>
+                                </div>
+                                <div class="recon-detail-row" style="color: #dc2626;">
+                                    <span>- เติมใช้เอง</span>
+                                    <span id="reconPersonalFuel">฿0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DIFFERENCE -->
+                        <div class="recon-summary-card recon-card-difference">
+                            <div class="recon-card-title" style="color: #d97706;">3. ผลต่าง</div>
+                            <div style="text-align: center; padding: 2rem 0;">
+                                <div id="reconDifference"
+                                    style="font-size: 3rem; font-weight: 700; color: #d97706; margin-bottom: 0.5rem;">
+                                    ฿0.00</div>
+                                <div id="reconDifferenceLabel"
+                                    style="display: inline-block; padding: 0.5rem 1.5rem; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 20px; font-weight: 700; color: #92400e;">
+                                    ✓ ยอดตรง</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="page-footer">
+            <p><strong>บีซี ปิโตรเลียม</strong></p>
+            <p>40 ม.6 ต.เตาปูน อ.แก่งคอย จ.สระบุรี 18110 | โทร: 096-236-9153</p>
+        </footer>
+    </main>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/cash.js"></script>
+    <script>
+        // User dropdown toggle
+        Auth.requireAuth();
+        Auth.setupTopBar();
+    </script>
+</body>
+
+</html>
