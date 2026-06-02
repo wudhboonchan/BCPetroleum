@@ -318,14 +318,18 @@ export default function Dashboard() {
     <main className="main-container">
       {loading && <Loading />}
 
-      {/* DATE STRIP */}
-      <div style={{ marginTop: 12, marginBottom: 0 }}>
+      {/* PAGE HEADER — ตรงกับหน้าอื่นๆ */}
+      <div className="page-header">
+        <div>
+          <div className="page-eyebrow">แดชบอร์ด · Dashboard</div>
+          <h1 className="page-title">ภาพรวมวันนี้</h1>
+        </div>
         <span style={{
           fontFamily: 'var(--f-mono)', fontSize: 13,
           letterSpacing: '0.1em', textTransform: 'uppercase',
           color: 'var(--ink-3)',
         }}>
-          วันนี้ · {thaiDate(now)}
+          {thaiDate(now)}
         </span>
       </div>
 
