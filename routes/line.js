@@ -201,7 +201,7 @@ router.get('/invoice/:invoiceId', async (req, res) => {
         const { data: bills } = await supabase
             .from('credit_sales')
             .select('date, bill_book, bill_number, vehicle_number, amount, note')
-            .eq('invoice_id', invoiceId)
+            .eq('invoice_id', invoice.id)   // ใช้ integer id ไม่ใช่ token
             .order('date', { ascending: true });
 
         invoice.bills = bills || [];
