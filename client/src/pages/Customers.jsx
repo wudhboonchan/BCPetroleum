@@ -393,7 +393,7 @@ export default function Customers() {
 
               {/* Bills table */}
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10, fontFamily: 'var(--f-body)' }}>รายการบิล</div>
-              <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid var(--line-soft)', borderRadius: 8 }}>
+              <div style={{ maxHeight: 320, overflowY: 'auto', overflowX: 'hidden', border: '1px solid var(--line-soft)', borderRadius: 8 }}>
                 <table className="data-table" style={{ fontSize: 13, width: '100%', tableLayout: 'fixed' }}>
                   <colgroup>
                     <col style={{ width: '6%' }} />
