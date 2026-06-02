@@ -75,6 +75,7 @@ const inventoryRoutes = require('./routes/inventory');
 const lineRoutes = require('./routes/line');
 
 app.use('/api/auth', authRoutes);
+app.use('/api/line', lineRoutes);      // ต้องอยู่ก่อน /api (cashRoutes)
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/daily', dailyRoutes);
 app.use('/api/credit', creditRoutes);
@@ -84,7 +85,6 @@ app.use('/api', cashRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/inventory', inventoryRoutes);
-app.use('/api/line', lineRoutes);
 
 // SPA fallback — ทุก route ที่ไม่ใช่ /api ส่งไป index.html ให้ React Router จัดการ
 app.get('/{*path}', (req, res) => {
