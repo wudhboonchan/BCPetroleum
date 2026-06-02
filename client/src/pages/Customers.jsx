@@ -394,21 +394,14 @@ export default function Customers() {
               {/* Bills table */}
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10, fontFamily: 'var(--f-body)' }}>รายการบิล</div>
               <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid var(--line-soft)', borderRadius: 8 }}>
-                <table className="data-table" style={{ fontSize: 13, tableLayout: 'fixed', width: '100%' }}>
-                  <colgroup>
-                    <col style={{ width: '6%' }} />
-                    <col style={{ width: '20%' }} />
-                    <col style={{ width: '18%' }} />
-                    <col style={{ width: '20%' }} />
-                    <col style={{ width: '36%' }} />
-                  </colgroup>
+                <table className="data-table" style={{ fontSize: 13, width: '100%', tableLayout: 'auto' }}>
                   <thead>
                     <tr>
-                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap', width: '22%' }}>วันที่</th>
-                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap', width: '15%' }}>เล่ม/เลขที่</th>
-                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap', width: '13%' }}>ทะเบียน</th>
-                      <th style={{ fontFamily: 'var(--f-body)' }}>หมายเหตุ</th>
-                      <th className="r" style={{ paddingRight: 12, fontFamily: 'var(--f-body)', whiteSpace: 'nowrap', width: '15%' }}>ยอด (฿)</th>
+                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap' }}>วันที่</th>
+                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap' }}>เล่ม/เลขที่</th>
+                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap' }}>ทะเบียน</th>
+                      <th style={{ fontFamily: 'var(--f-body)', width: '100%' }}>หมายเหตุ</th>
+                      <th className="r" style={{ paddingRight: 12, fontFamily: 'var(--f-body)', whiteSpace: 'nowrap' }}>ยอด (฿)</th>
                     </tr>
                   </thead>
                   <tbody>
