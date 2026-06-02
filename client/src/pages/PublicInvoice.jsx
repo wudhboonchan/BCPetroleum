@@ -6,7 +6,7 @@ const fmtShort = (n) => Number(n).toLocaleString('th-TH', { minimumFractionDigit
 const thaiDate = (str) => {
   if (!str) return '—';
   const d = new Date(str);
-  return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 const C = {
@@ -137,7 +137,7 @@ export default function PublicInvoice() {
               {bills.map((b, i) => (
                 <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
                   <td style={{ padding: '11px 6px', textAlign: 'center', color: C.ink3, fontSize: 11, fontFamily: C.mono }}>{i + 1}</td>
-                  <td style={{ padding: '11px 6px', fontFamily: C.mono, fontSize: 12 }}>{b.date?.split('T')[0]}</td>
+                  <td style={{ padding: '11px 6px', fontSize: 12 }}>{thaiDate(b.date)}</td>
                   <td style={{ padding: '11px 6px', textAlign: 'center', fontFamily: C.mono, fontSize: 12 }}>{b.bill_book}/{b.bill_number}</td>
                   <td style={{ padding: '11px 6px', textAlign: 'center', fontFamily: C.mono, fontSize: 12 }}>{b.vehicle_number || '—'}</td>
                   <td style={{ padding: '11px 6px', color: C.ink2 }}>{b.note || <span style={{ color: C.ink3 }}>—</span>}</td>
