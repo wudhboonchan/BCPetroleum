@@ -5,7 +5,7 @@ import { api } from '../lib/api.js';
 import { useToast } from '../components/Toast.jsx';
 import Loading from '../components/Loading.jsx';
 import Modal from '../components/Modal.jsx';
-import { fmt, todayStr, thaiDate } from '../lib/utils.js';
+import { fmt, todayStr, thaiDate, thaiShort } from '../lib/utils.js';
 
 /* ── helper: first day of this month ── */
 function firstOfMonth() {
@@ -587,7 +587,7 @@ export default function Credit() {
                             style={{ width: 15, height: 15, cursor: 'pointer', display: 'block', margin: 'auto' }} />
                         )}
                       </td>
-                      <td style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{thaiDate(new Date(c.date))}</td>
+                      <td style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{thaiShort(new Date(c.date))}</td>
                       <td style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>
                         {c.customers?.name || '—'}
                       </td>
