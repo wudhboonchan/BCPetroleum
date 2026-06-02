@@ -587,7 +587,7 @@ export default function Credit() {
                             style={{ width: 15, height: 15, cursor: 'pointer', display: 'block', margin: 'auto' }} />
                         )}
                       </td>
-                      <td className="mono" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{c.date?.split('T')[0]}</td>
+                      <td style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{thaiDate(new Date(c.date))}</td>
                       <td style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>
                         {c.customers?.name || '—'}
                       </td>
