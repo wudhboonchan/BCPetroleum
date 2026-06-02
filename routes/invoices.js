@@ -109,6 +109,10 @@ router.post('/', async (req, res) => {
         // Generate invoice number
         const invoice_number = await generateInvoiceNumber();
 
+        // สร้าง public token แบบสุ่ม (ใช้แทน ID ใน public URL)
+        const crypto = require('crypto');
+        const public_token = crypto.randomBytes(24).toString('hex');
+
         // Create invoice
         const { data: invoice, error: createError } = await supabase
             .from('invoices')
@@ -121,7 +125,8 @@ router.post('/', async (req, res) => {
                 remaining_amount: total_amount,
                 issue_date: issue_date || new Date().toISOString().split('T')[0],
                 note,
-                created_by: req.user.id
+                created_by: req.user.id,
+                public_token,
             })
             .select()
             .single();

@@ -146,6 +146,14 @@ router.post('/send-invoice/:invoiceId', authMiddleware, async (req, res) => {
             .eq('id', invoiceId)
             .single();
 
+        // สร้าง public_token ถ้ายังไม่มี (invoice เก่าที่สร้างก่อน migration)
+        if (invoice && !invoice.public_token) {
+            const crypto = require('crypto');
+            const token = crypto.randomBytes(24).toString('hex');
+            await supabase.from('invoices').update({ public_token: token }).eq('id', invoiceId);
+            invoice.public_token = token;
+        }
+
         if (invErr || !invoice) return res.status(404).json({ error: 'ไม่พบใบวางบิล' });
 
         // ดึง bills
@@ -161,7 +169,7 @@ router.post('/send-invoice/:invoiceId', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'ลูกค้ารายนี้ยังไม่มี LINE User ID — กรุณาใส่ข้อมูลในโปรไฟล์ลูกค้าก่อน' });
         }
 
-        const publicUrl = `${baseUrl}/invoice/${invoiceId}`;
+        const publicUrl = `${baseUrl}/invoice/${invoice.public_token}`;
         const flexMsg = buildInvoiceFlex(invoice, publicUrl);
 
         await sendLineMessage(lineUserId, [flexMsg]);
@@ -183,12 +191,11 @@ router.get('/invoice/:invoiceId', async (req, res) => {
         const { data: invoice, error } = await supabase
             .from('invoices')
             .select(`*, customers(name, phone)`)
-            .eq('id', invoiceId)
+            .eq('public_token', invoiceId)   // query ด้วย token ไม่ใช่ id
             .single();
 
         if (error || !invoice) {
-            console.error('Invoice fetch error:', error, 'invoiceId:', invoiceId);
-            return res.status(404).json({ error: 'ไม่พบใบวางบิล', detail: error?.message, invoiceId });
+            return res.status(404).json({ error: 'ไม่พบใบวางบิล' });
         }
 
         const { data: bills } = await supabase
