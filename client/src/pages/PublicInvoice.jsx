@@ -74,47 +74,50 @@ export default function PublicInvoice() {
   return (
     <div style={{ minHeight: '100vh', background: isPrintMode ? 'white' : '#f5f0eb', padding: isPrintMode ? '0' : '24px 16px', fontFamily: 'Sarabun, sans-serif' }}>
       <style>{printStyle}</style>
-      <div style={{ maxWidth: 680, margin: '0 auto' }} className="print-container">
+      <div style={{ maxWidth: 720, margin: '0 auto', background: 'white', borderRadius: isPrintMode ? 0 : 12, boxShadow: isPrintMode ? 'none' : '0 4px 24px rgba(0,0,0,0.10)', overflow: 'hidden' }} className="print-container">
 
-        {/* Header */}
-        <div style={{ background: '#2D3E50', color: 'white', borderRadius: isPrintMode ? '0' : '12px 12px 0 0', padding: '20px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>BC Petroleum</div>
-            <div style={{ fontSize: 13, color: '#aabbcc' }}>วันที่ออก: {thaiDate(invoice.issue_date)}</div>
+        {/* ── HEADER ── */}
+        <div style={{ background: '#2D3E50', padding: '20px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* Logo + ชื่อบริษัท */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <img src="/logo.png" alt="BC Petroleum" style={{ height: 52, width: 52, objectFit: 'contain' }} />
+            <div>
+              <img src="/logo_text.png" alt="BC Petroleum" style={{ height: 28, objectFit: 'contain', display: 'block' }}
+                onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
+              <div style={{ display: 'none', fontSize: 18, fontWeight: 700, color: 'white' }}>BC Petroleum</div>
+              <div style={{ fontSize: 12, color: '#aabbcc', marginTop: 2 }}>ใบวางบิล / Invoice</div>
+            </div>
           </div>
+          {/* เลขที่ + วันที่ */}
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 13, color: '#aabbcc', marginBottom: 2 }}>เลขที่ใบวางบิล</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: 'white' }}>{invoice.invoice_number}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: 'white', letterSpacing: 1 }}>{invoice.invoice_number}</div>
+            <div style={{ fontSize: 12, color: '#aabbcc', marginTop: 4 }}>วันที่ออก: {thaiDate(invoice.issue_date)}</div>
+            <div style={{ marginTop: 8, display: 'inline-block', padding: '3px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+              background: isPaid ? 'rgba(34,160,107,0.25)' : 'rgba(217,119,6,0.25)',
+              color: isPaid ? '#6ee7b7' : '#fcd34d' }}>
+              {isPaid ? '✅ ชำระแล้ว' : '⏳ ค้างชำระ'}
+            </div>
+          </div>
+        </div>
+
+        {/* ── INFO BAR ── */}
+        <div style={{ background: '#f8f9fa', borderBottom: '1px solid #e5e7eb', padding: '14px 28px', display: 'flex', gap: 40 }}>
+          <div>
+            <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 2 }}>ลูกค้า</div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{invoice.customers?.name || '—'}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 2 }}>จำนวนบิล</div>
+            <div style={{ fontWeight: 600 }}>{bills.length} รายการ</div>
+          </div>
+          <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+            <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 2 }}>ยอดรวมทั้งสิ้น</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#d97706' }}>฿{fmt(invoice.total_amount)}</div>
           </div>
         </div>
 
         {/* Body */}
-        <div style={{ background: 'white', padding: '20px 24px', borderRadius: '0 0 12px 12px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-
-          {/* Status */}
-          <div style={{
-            display: 'inline-block', padding: '4px 16px', borderRadius: 999, fontSize: 13, fontWeight: 600, marginBottom: 20,
-            background: isPaid ? '#f0fdf4' : '#fffbeb',
-            color: isPaid ? '#15803d' : '#b45309',
-          }}>
-            {isPaid ? '✅ ชำระแล้ว' : '⏳ ค้างชำระ'}
-          </div>
-
-          {/* Summary */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, background: '#f8f9fa', borderRadius: 8, padding: '14px 16px', marginBottom: 20 }}>
-            <div>
-              <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>ลูกค้า</div>
-              <div style={{ fontWeight: 600 }}>{invoice.customers?.name || '—'}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>จำนวนบิล</div>
-              <div style={{ fontWeight: 600 }}>{bills.length} รายการ</div>
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>ยอดรวมทั้งสิ้น</div>
-              <div style={{ fontSize: 26, fontWeight: 700, color: '#d97706' }}>฿{fmt(invoice.total_amount)}</div>
-            </div>
-          </div>
+        <div style={{ padding: '20px 28px' }}>
 
           {/* Bills Table — ใช้ตารางทั้ง mobile และ print */}
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10, color: '#374151' }}>รายการบิล</div>
