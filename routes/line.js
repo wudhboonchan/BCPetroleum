@@ -283,7 +283,25 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                     continue;
                 }
 
-                // บันทึก LINE User ID
+                // ถ้าเชื่อมกับ LINE อื่นอยู่แล้ว (ไม่ใช่คนนี้)
+                if (customer.line_user_id && customer.line_user_id !== lineUserId) {
+                    await replyMessage(event.replyToken, [{
+                        type: 'text',
+                        text: `⚠️ รหัสลูกค้า "${text}" ได้เชื่อมต่อกับ LINE อื่นไว้แล้ว\n\nหากต้องการเปลี่ยนแปลง กรุณาติดต่อทางร้านครับ`,
+                    }]);
+                    continue;
+                }
+
+                // ถ้าเป็น LINE เดิมอยู่แล้ว
+                if (customer.line_user_id === lineUserId) {
+                    await replyMessage(event.replyToken, [{
+                        type: 'text',
+                        text: `✅ คุณ ${customer.name} เชื่อมต่อ LINE นี้ไว้แล้วครับ ไม่ต้องทำอะไรเพิ่มเติม 😊`,
+                    }]);
+                    continue;
+                }
+
+                // บันทึก LINE User ID (ใหม่)
                 await supabase
                     .from('customers')
                     .update({ line_user_id: lineUserId })
