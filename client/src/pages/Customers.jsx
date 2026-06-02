@@ -408,6 +408,7 @@ export default function Customers() {
                       <th style={{ fontFamily: 'var(--f-body)' }}>วันที่</th>
                       <th style={{ fontFamily: 'var(--f-body)' }}>เล่ม/เลขที่</th>
                       <th style={{ fontFamily: 'var(--f-body)' }}>ทะเบียนรถ</th>
+                      <th style={{ fontFamily: 'var(--f-body)' }}>หมายเหตุ</th>
                       <th className="r" style={{ paddingRight: 20, fontFamily: 'var(--f-body)' }}>ยอดเงิน (฿)</th>
                     </tr>
                   </thead>
@@ -418,13 +419,14 @@ export default function Customers() {
                         <td className="mono" style={{ fontSize: 13 }}>{thaiShort(new Date(b.date))}</td>
                         <td className="mono" style={{ fontSize: 13 }}>{b.bill_book}/{b.bill_number}</td>
                         <td className="mono" style={{ fontSize: 13 }}>{b.vehicle_number || '—'}</td>
+                        <td style={{ fontSize: 13, color: 'var(--ink-2)' }}>{b.note || '—'}</td>
                         <td className="r mono" style={{ paddingRight: 20, fontSize: 14 }}>฿{fmt(b.amount)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan="4" style={{ textAlign: 'right', paddingRight: 12, fontWeight: 600, fontSize: 13, borderTop: '1px solid var(--line-soft)', fontFamily: 'var(--f-body)' }}>รวมทั้งสิ้น</td>
+                      <td colSpan="5" style={{ textAlign: 'right', paddingRight: 12, fontWeight: 600, fontSize: 13, borderTop: '1px solid var(--line-soft)', fontFamily: 'var(--f-body)' }}>รวมทั้งสิ้น</td>
                       <td className="r mono" style={{ paddingRight: 20, fontWeight: 700, fontSize: 15, borderTop: '1px solid var(--line-soft)', color: 'var(--rust)' }}>
                         ฿{Number(inv.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                       </td>
