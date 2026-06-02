@@ -184,7 +184,10 @@ router.get('/invoice/:invoiceId', async (req, res) => {
             .eq('id', invoiceId)
             .single();
 
-        if (error || !invoice) return res.status(404).json({ error: 'ไม่พบใบวางบิล' });
+        if (error || !invoice) {
+            console.error('Invoice fetch error:', error, 'invoiceId:', invoiceId);
+            return res.status(404).json({ error: 'ไม่พบใบวางบิล', detail: error?.message, invoiceId });
+        }
 
         const { data: bills } = await supabase
             .from('credit_sales')
