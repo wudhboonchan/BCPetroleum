@@ -393,47 +393,38 @@ export default function Customers() {
 
               {/* Bills table */}
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10, fontFamily: 'var(--f-body)' }}>รายการบิล</div>
-              <div style={{ maxHeight: 320, overflowY: 'auto', overflowX: 'hidden', border: '1px solid var(--line-soft)', borderRadius: 8 }}>
-                <table className="data-table" style={{ fontSize: 13, width: '100%', tableLayout: 'fixed' }}>
-                  <colgroup>
-                    <col style={{ width: '6%' }} />
-                    <col style={{ width: '18%' }} />
-                    <col style={{ width: '14%' }} />
-                    <col style={{ width: '13%' }} />
-                    <col style={{ width: '34%' }} />
-                    <col style={{ width: '15%' }} />
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th style={{ fontFamily: 'var(--f-body)', textAlign: 'center' }}>#</th>
-                      <th style={{ fontFamily: 'var(--f-body)' }}>วันที่</th>
-                      <th style={{ fontFamily: 'var(--f-body)' }}>เล่ม/เลขที่</th>
-                      <th style={{ fontFamily: 'var(--f-body)' }}>ทะเบียน</th>
-                      <th style={{ fontFamily: 'var(--f-body)' }}>หมายเหตุ</th>
-                      <th className="r" style={{ paddingRight: 12, fontFamily: 'var(--f-body)' }}>ยอด (฿)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bills.map((b, i) => (
-                      <tr key={b.id}>
-                        <td style={{ fontSize: 12, textAlign: 'center', color: 'var(--ink-3)' }}>{i + 1}</td>
-                        <td style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{thaiShort(new Date(b.date))}</td>
-                        <td className="mono" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{b.bill_book}/{b.bill_number}</td>
-                        <td className="mono" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{b.vehicle_number || '—'}</td>
-                        <td style={{ fontSize: 12, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.note || '—'}</td>
-                        <td className="r mono" style={{ paddingRight: 12, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>฿{fmt(b.amount)}</td>
+              <div style={{ border: '1px solid var(--line-soft)', borderRadius: 8, overflow: 'hidden' }}>
+                <div style={{ maxHeight: 320, overflowY: 'auto', overflowX: 'hidden' }}>
+                  <table style={{ fontSize: 13, width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--line-soft)', background: 'var(--surface-2, #f5f0eb)' }}>
+                        <th style={{ fontFamily: 'var(--f-body)', textAlign: 'center', padding: '8px 6px', width: 36 }}>#</th>
+                        <th style={{ fontFamily: 'var(--f-body)', padding: '8px 8px', width: 110 }}>วันที่</th>
+                        <th style={{ fontFamily: 'var(--f-body)', padding: '8px 8px', width: 90 }}>เล่ม/เลขที่</th>
+                        <th style={{ fontFamily: 'var(--f-body)', padding: '8px 8px', width: 80 }}>ทะเบียน</th>
+                        <th style={{ fontFamily: 'var(--f-body)', padding: '8px 8px' }}>หมายเหตุ</th>
+                        <th style={{ fontFamily: 'var(--f-body)', padding: '8px 12px 8px 8px', textAlign: 'right', width: 100 }}>ยอด (฿)</th>
                       </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan="5" style={{ textAlign: 'right', paddingRight: 12, fontWeight: 600, fontSize: 13, borderTop: '1px solid var(--line-soft)', fontFamily: 'var(--f-body)' }}>รวมทั้งสิ้น</td>
-                      <td className="r mono" style={{ paddingRight: 20, fontWeight: 700, fontSize: 15, borderTop: '1px solid var(--line-soft)', color: 'var(--rust)' }}>
-                        ฿{Number(inv.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
+                    </thead>
+                    <tbody>
+                      {bills.map((b, i) => (
+                        <tr key={b.id} style={{ borderBottom: '1px solid var(--line-soft)' }}>
+                          <td style={{ fontSize: 12, textAlign: 'center', padding: '8px 6px', color: 'var(--ink-3)' }}>{i + 1}</td>
+                          <td style={{ fontSize: 12, padding: '8px 8px', whiteSpace: 'nowrap' }}>{thaiShort(new Date(b.date))}</td>
+                          <td style={{ fontSize: 12, padding: '8px 8px', whiteSpace: 'nowrap', fontFamily: 'var(--f-mono)' }}>{b.bill_book}/{b.bill_number}</td>
+                          <td style={{ fontSize: 12, padding: '8px 8px', whiteSpace: 'nowrap', fontFamily: 'var(--f-mono)' }}>{b.vehicle_number || '—'}</td>
+                          <td style={{ fontSize: 12, padding: '8px 8px', color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.note || '—'}</td>
+                          <td style={{ fontSize: 13, padding: '8px 12px 8px 8px', textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap', fontFamily: 'var(--f-mono)' }}>฿{fmt(b.amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Total — อยู่นอก scroll area เสมอ */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '10px 12px', borderTop: '2px solid var(--line-soft)', background: 'var(--surface-2, #f5f0eb)' }}>
+                  <span style={{ fontWeight: 600, fontSize: 13, marginRight: 16, fontFamily: 'var(--f-body)' }}>รวมทั้งสิ้น</span>
+                  <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--rust)', fontFamily: 'var(--f-mono)' }}>฿{Number(inv.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                </div>
               </div>
 
               {/* Pay confirm inline */}
@@ -660,12 +651,12 @@ export default function Customers() {
       <div className="table-wrap">
           <table className="data-table" style={{ tableLayout: 'fixed', width: '100%' }}>
             <colgroup>
-              <col style={{ width: '5%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '30%' }} />
               <col style={{ width: '14%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '9%' }} />
-              <col style={{ width: '11%' }} />
-              <col style={{ width: '51%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '12%' }} />
+              <col style={{ width: '22%' }} />
             </colgroup>
             <thead>
               <tr>
