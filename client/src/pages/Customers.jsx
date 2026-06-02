@@ -404,29 +404,27 @@ export default function Customers() {
                   </colgroup>
                   <thead>
                     <tr>
-                      <th style={{ textAlign: 'center', fontFamily: 'var(--f-body)' }}>#</th>
-                      <th style={{ fontFamily: 'var(--f-body)' }}>วันที่</th>
-                      <th style={{ fontFamily: 'var(--f-body)' }}>เล่ม/เลขที่</th>
-                      <th style={{ fontFamily: 'var(--f-body)' }}>ทะเบียนรถ</th>
+                      <th style={{ fontFamily: 'var(--f-body)', width: '18%' }}>วันที่</th>
+                      <th style={{ fontFamily: 'var(--f-body)', width: '16%' }}>เล่ม/เลขที่</th>
+                      <th style={{ fontFamily: 'var(--f-body)', width: '14%' }}>ทะเบียน</th>
                       <th style={{ fontFamily: 'var(--f-body)' }}>หมายเหตุ</th>
-                      <th className="r" style={{ paddingRight: 20, fontFamily: 'var(--f-body)' }}>ยอดเงิน (฿)</th>
+                      <th className="r" style={{ paddingRight: 12, fontFamily: 'var(--f-body)', width: '16%' }}>ยอด (฿)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bills.map((b, i) => (
                       <tr key={b.id}>
-                        <td className="mono" style={{ textAlign: 'center', color: 'var(--ink-3)', fontSize: 12 }}>{i + 1}</td>
-                        <td className="mono" style={{ fontSize: 13 }}>{thaiShort(new Date(b.date))}</td>
-                        <td className="mono" style={{ fontSize: 13 }}>{b.bill_book}/{b.bill_number}</td>
-                        <td className="mono" style={{ fontSize: 13 }}>{b.vehicle_number || '—'}</td>
-                        <td style={{ fontSize: 13, color: 'var(--ink-2)' }}>{b.note || '—'}</td>
-                        <td className="r mono" style={{ paddingRight: 20, fontSize: 14 }}>฿{fmt(b.amount)}</td>
+                        <td style={{ fontSize: 12 }}>{thaiShort(new Date(b.date))}</td>
+                        <td className="mono" style={{ fontSize: 12 }}>{b.bill_book}/{b.bill_number}</td>
+                        <td className="mono" style={{ fontSize: 12 }}>{b.vehicle_number || '—'}</td>
+                        <td style={{ fontSize: 12, color: 'var(--ink-2)' }}>{b.note || '—'}</td>
+                        <td className="r mono" style={{ paddingRight: 12, fontSize: 13, fontWeight: 600 }}>฿{fmt(b.amount)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan="5" style={{ textAlign: 'right', paddingRight: 12, fontWeight: 600, fontSize: 13, borderTop: '1px solid var(--line-soft)', fontFamily: 'var(--f-body)' }}>รวมทั้งสิ้น</td>
+                      <td colSpan="4" style={{ textAlign: 'right', paddingRight: 12, fontWeight: 600, fontSize: 13, borderTop: '1px solid var(--line-soft)', fontFamily: 'var(--f-body)' }}>รวมทั้งสิ้น</td>
                       <td className="r mono" style={{ paddingRight: 20, fontWeight: 700, fontSize: 15, borderTop: '1px solid var(--line-soft)', color: 'var(--rust)' }}>
                         ฿{Number(inv.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                       </td>
