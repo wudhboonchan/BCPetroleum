@@ -404,21 +404,21 @@ export default function Customers() {
                   </colgroup>
                   <thead>
                     <tr>
-                      <th style={{ fontFamily: 'var(--f-body)', width: '18%' }}>วันที่</th>
-                      <th style={{ fontFamily: 'var(--f-body)', width: '16%' }}>เล่ม/เลขที่</th>
-                      <th style={{ fontFamily: 'var(--f-body)', width: '14%' }}>ทะเบียน</th>
+                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap', width: '22%' }}>วันที่</th>
+                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap', width: '15%' }}>เล่ม/เลขที่</th>
+                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap', width: '13%' }}>ทะเบียน</th>
                       <th style={{ fontFamily: 'var(--f-body)' }}>หมายเหตุ</th>
-                      <th className="r" style={{ paddingRight: 12, fontFamily: 'var(--f-body)', width: '16%' }}>ยอด (฿)</th>
+                      <th className="r" style={{ paddingRight: 12, fontFamily: 'var(--f-body)', whiteSpace: 'nowrap', width: '15%' }}>ยอด (฿)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bills.map((b, i) => (
                       <tr key={b.id}>
-                        <td style={{ fontSize: 12 }}>{thaiShort(new Date(b.date))}</td>
-                        <td className="mono" style={{ fontSize: 12 }}>{b.bill_book}/{b.bill_number}</td>
-                        <td className="mono" style={{ fontSize: 12 }}>{b.vehicle_number || '—'}</td>
+                        <td style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{thaiShort(new Date(b.date))}</td>
+                        <td className="mono" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{b.bill_book}/{b.bill_number}</td>
+                        <td className="mono" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{b.vehicle_number || '—'}</td>
                         <td style={{ fontSize: 12, color: 'var(--ink-2)' }}>{b.note || '—'}</td>
-                        <td className="r mono" style={{ paddingRight: 12, fontSize: 13, fontWeight: 600 }}>฿{fmt(b.amount)}</td>
+                        <td className="r mono" style={{ paddingRight: 12, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>฿{fmt(b.amount)}</td>
                       </tr>
                     ))}
                   </tbody>
