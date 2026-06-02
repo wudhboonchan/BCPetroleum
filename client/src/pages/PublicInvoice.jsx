@@ -53,9 +53,9 @@ export default function PublicInvoice() {
 
         {/* Header */}
         <div style={{ background: '#2D3E50', color: 'white', borderRadius: '12px 12px 0 0', padding: '20px 24px' }}>
-          <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 4 }}>BC Petroleum</div>
-          <div style={{ fontSize: 22, fontWeight: 700 }}>ใบวางบิล {invoice.invoice_number}</div>
-          <div style={{ fontSize: 13, opacity: 0.8, marginTop: 4 }}>วันที่ออก: {thaiDate(invoice.issue_date)}</div>
+          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>BC Petroleum</div>
+          <div style={{ fontSize: 14, color: '#aabbcc', marginBottom: 2 }}>ใบวางบิล {invoice.invoice_number}</div>
+          <div style={{ fontSize: 13, color: '#aabbcc' }}>วันที่ออก: {thaiDate(invoice.issue_date)}</div>
         </div>
 
         {/* Body */}
