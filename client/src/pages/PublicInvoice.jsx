@@ -86,39 +86,28 @@ export default function PublicInvoice() {
             </div>
           </div>
 
-          {/* Bills Table */}
+          {/* Bills List */}
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>รายการบิล</div>
-          <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: '#f3f4f6' }}>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>#</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>วันที่</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>เล่ม/เลขที่</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>ทะเบียน</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>หมายเหตุ</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>ยอด (฿)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bills.map((b, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                    <td style={{ padding: '8px 10px', textAlign: 'center', color: '#999' }}>{i + 1}</td>
-                    <td style={{ padding: '8px 10px' }}>{b.date?.split('T')[0]}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>{b.bill_book}/{b.bill_number}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>{b.vehicle_number || '—'}</td>
-                    <td style={{ padding: '8px 10px', color: '#555' }}>{b.note || '—'}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600 }}>฿{fmt(b.amount)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr style={{ background: '#f8f9fa' }}>
-                  <td colSpan={5} style={{ padding: '10px', textAlign: 'right', fontWeight: 600, borderTop: '2px solid #e5e7eb' }}>รวมทั้งสิ้น</td>
-                  <td style={{ padding: '10px', textAlign: 'right', fontWeight: 700, fontSize: 15, color: '#d97706', borderTop: '2px solid #e5e7eb' }}>฿{fmt(invoice.total_amount)}</td>
-                </tr>
-              </tfoot>
-            </table>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {bills.map((b, i) => (
+              <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 14px', background: '#fafafa' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, color: '#999' }}>#{i + 1}</span>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: '#d97706' }}>฿{fmt(b.amount)}</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', fontSize: 13 }}>
+                  <div><span style={{ color: '#888' }}>วันที่: </span>{b.date?.split('T')[0]}</div>
+                  <div><span style={{ color: '#888' }}>เล่ม/เลขที่: </span>{b.bill_book}/{b.bill_number}</div>
+                  <div><span style={{ color: '#888' }}>ทะเบียน: </span>{b.vehicle_number || '—'}</div>
+                  {b.note && <div style={{ gridColumn: '1 / -1' }}><span style={{ color: '#888' }}>หมายเหตุ: </span>{b.note}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Total */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '12px 14px', background: '#f8f9fa', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+            <span style={{ fontWeight: 600 }}>รวมทั้งสิ้น</span>
+            <span style={{ fontWeight: 700, fontSize: 18, color: '#d97706' }}>฿{fmt(invoice.total_amount)}</span>
           </div>
 
           {/* Footer note */}
