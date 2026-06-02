@@ -334,34 +334,13 @@ export default function Customers() {
     const isPaid = inv.status === 'paid';
 
     const handlePrint = () => {
-      const win = window.open('', '_blank', 'width=800,height=900');
-      const rows = bills.map((b, i) => `
-        <tr>
-          <td style="text-align:center">${i + 1}</td>
-          <td>${b.date?.split('T')[0] || ''}</td>
-          <td style="text-align:center">${b.bill_book}/${b.bill_number}</td>
-          <td style="text-align:center">${b.vehicle_number || '-'}</td>
-          <td style="text-align:right">฿${Number(b.amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
-        </tr>`).join('');
-      win.document.write(`<html><head><title>ใบวางบิล ${inv.invoice_number}</title>
-        <style>body{font-family:sans-serif;padding:32px}h2{margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:16px}
-        th,td{border:1px solid #ccc;padding:8px 10px;font-size:13px}th{background:#f5f5f5}
-        .summary{display:flex;gap:40px;margin:16px 0;padding:12px;background:#fafafa;border-radius:6px}
-        .tfoot td{font-weight:700;background:#f5f5f5}</style></head>
-        <body>
-        <h2>ใบวางบิล ${inv.invoice_number}</h2>
-        <div style="color:#666;font-size:13px;margin-bottom:8px">วันที่ออกใบวางบิล: ${inv.issue_date || inv.created_at?.split('T')[0] || ''}</div>
-        <div class="summary">
-          <div><div style="font-size:12px;color:#888">ลูกค้า</div><div style="font-weight:600">${inv.customers?.name || ''}</div></div>
-          <div><div style="font-size:12px;color:#888">จำนวนบิล</div><div style="font-weight:600">${bills.length} รายการ</div></div>
-          <div><div style="font-size:12px;color:#888">ยอดรวม</div><div style="font-weight:600;color:#c0392b">฿${Number(inv.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</div></div>
-        </div>
-        <table><thead><tr><th>#</th><th>วันที่</th><th>เล่ม-เลขที่</th><th>ทะเบียนรถ</th><th>ยอดเงิน</th></tr></thead>
-        <tbody>${rows}</tbody>
-        <tfoot><tr class="tfoot"><td colspan="4" style="text-align:right">รวมทั้งสิ้น</td><td style="text-align:right">฿${Number(inv.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td></tr></tfoot>
-        </table></body></html>`);
-      win.document.close();
-      win.print();
+      const token = inv.public_token;
+      if (token) {
+        // เปิดหน้า public invoice แล้ว print — สวยและเสถียรกว่า
+        window.open(`/invoice/${token}?print=1`, '_blank');
+      } else {
+        toast.error('ไม่พบ token ของใบวางบิลนี้ กรุณาลองใหม่อีกครั้ง');
+      }
     };
 
     return (
