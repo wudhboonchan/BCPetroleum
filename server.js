@@ -11,6 +11,8 @@ const { authMiddleware } = require('./middleware/auth');
 
 // Middleware
 app.use(cors());
+// Webhook route ต้องใช้ raw body — ต้องอยู่ก่อน express.json()
+app.use('/api/line/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

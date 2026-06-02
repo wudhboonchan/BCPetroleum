@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const https = require('https');
+const crypto = require('crypto');
 const supabase = require('../config/supabase');
 const { authMiddleware } = require('../middleware/auth');
 
 const LINE_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET;
 
 // ──────────────────────────────────────────────
 // Helper: ส่ง LINE message ด้วย Flex Message
@@ -199,6 +201,102 @@ router.get('/invoice/:invoiceId', async (req, res) => {
         res.json({ invoice });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// ──────────────────────────────────────────────
+// Helper: ตอบกลับ LINE (Reply API)
+// ──────────────────────────────────────────────
+function replyMessage(replyToken, messages) {
+    return new Promise((resolve, reject) => {
+        const body = JSON.stringify({ replyToken, messages });
+        const options = {
+            hostname: 'api.line.me',
+            path: '/v2/bot/message/reply',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${LINE_ACCESS_TOKEN}`,
+                'Content-Length': Buffer.byteLength(body),
+            },
+        };
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => resolve(data));
+        });
+        req.on('error', reject);
+        req.write(body);
+        req.end();
+    });
+}
+
+// ──────────────────────────────────────────────
+// POST /api/line/webhook  (รับ event จาก LINE)
+// ──────────────────────────────────────────────
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    // 1. ตรวจสอบ signature
+    const signature = req.headers['x-line-signature'];
+    const body = req.body;
+    const hmac = crypto.createHmac('sha256', LINE_CHANNEL_SECRET);
+    hmac.update(body);
+    const digest = hmac.digest('base64');
+
+    if (signature !== digest) {
+        console.error('Invalid LINE signature');
+        return res.status(401).send('Unauthorized');
+    }
+
+    const events = JSON.parse(body).events || [];
+    res.status(200).send('OK'); // ตอบ LINE ก่อนทันที
+
+    // 2. ประมวลผล events
+    for (const event of events) {
+        const lineUserId = event.source?.userId;
+        if (!lineUserId) continue;
+
+        try {
+            // เมื่อลูกค้า Add Friend
+            if (event.type === 'follow') {
+                await replyMessage(event.replyToken, [{
+                    type: 'text',
+                    text: '👋 สวัสดีครับ ยินดีต้อนรับสู่ BC Petroleum!\n\nกรุณาพิมพ์ "รหัสลูกค้า" ของคุณเพื่อเชื่อมต่อบัญชี\nเช่น: C001\n\n(สอบถามรหัสได้ที่ทางร้าน)',
+                }]);
+            }
+
+            // เมื่อลูกค้าพิมพ์ข้อความ
+            if (event.type === 'message' && event.message?.type === 'text') {
+                const text = event.message.text.trim().toUpperCase();
+
+                // ค้นหาลูกค้าจากรหัส
+                const { data: customer } = await supabase
+                    .from('customers')
+                    .select('id, name, code, line_user_id')
+                    .ilike('code', text)
+                    .single();
+
+                if (!customer) {
+                    await replyMessage(event.replyToken, [{
+                        type: 'text',
+                        text: `❌ ไม่พบรหัสลูกค้า "${text}"\n\nกรุณาตรวจสอบรหัสอีกครั้ง หรือติดต่อทางร้านครับ`,
+                    }]);
+                    continue;
+                }
+
+                // บันทึก LINE User ID
+                await supabase
+                    .from('customers')
+                    .update({ line_user_id: lineUserId })
+                    .eq('id', customer.id);
+
+                await replyMessage(event.replyToken, [{
+                    type: 'text',
+                    text: `✅ เชื่อมต่อสำเร็จ!\n\nสวัสดีคุณ ${customer.name} ครับ\nตั้งแต่นี้เราจะส่งใบวางบิลให้คุณทาง LINE นี้โดยตรงเลยนะครับ 😊`,
+                }]);
+            }
+        } catch (err) {
+            console.error('Webhook event error:', err);
+        }
     }
 });
 
