@@ -4,7 +4,7 @@ import { api } from '../lib/api.js';
 import { useToast } from '../components/Toast.jsx';
 import Loading from '../components/Loading.jsx';
 import Modal from '../components/Modal.jsx';
-import { fmt, thaiDate, todayStr } from '../lib/utils.js';
+import { fmt, thaiDate, thaiShort, todayStr } from '../lib/utils.js';
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -302,7 +302,7 @@ export default function Customers() {
                       <tr><td colSpan="5" className="empty-state">ไม่มีประวัติ</td></tr>
                     ) : sales.map(s => (
                       <tr key={s.id}>
-                        <td className="mono">{s.date?.split('T')[0]}</td>
+                        <td>{thaiShort(new Date(s.date))}</td>
                         <td className="mono">{s.bill_book}/{s.bill_number}</td>
                         <td className="mono">{s.vehicle_number || '—'}</td>
                         <td className="r mono">฿{fmt(s.amount)}</td>
@@ -415,7 +415,7 @@ export default function Customers() {
                     {bills.map((b, i) => (
                       <tr key={b.id}>
                         <td className="mono" style={{ textAlign: 'center', color: 'var(--ink-3)', fontSize: 12 }}>{i + 1}</td>
-                        <td className="mono" style={{ fontSize: 13 }}>{b.date?.split('T')[0]}</td>
+                        <td className="mono" style={{ fontSize: 13 }}>{thaiShort(new Date(b.date))}</td>
                         <td className="mono" style={{ fontSize: 13 }}>{b.bill_book}/{b.bill_number}</td>
                         <td className="mono" style={{ fontSize: 13 }}>{b.vehicle_number || '—'}</td>
                         <td className="r mono" style={{ paddingRight: 20, fontSize: 14 }}>฿{fmt(b.amount)}</td>
@@ -549,7 +549,7 @@ export default function Customers() {
                         onClick={() => toggleBill(b.id)}>
                         <td><input type="checkbox" checked={selectedBills.has(b.id)} onChange={() => toggleBill(b.id)}
                           style={{ width: 15, height: 15, display: 'block', margin: 'auto' }} onClick={e => e.stopPropagation()} /></td>
-                        <td className="mono">{b.date?.split('T')[0]}</td>
+                        <td className="mono">{thaiShort(new Date(b.date))}</td>
                         <td className="mono">{b.bill_book}/{b.bill_number}</td>
                         <td className="mono">{b.vehicle_number || '—'}</td>
                         <td style={{ color: 'var(--ink-3)' }}>{b.note || '—'}</td>
