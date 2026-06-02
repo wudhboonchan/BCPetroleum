@@ -394,30 +394,40 @@ export default function Customers() {
               {/* Bills table */}
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10, fontFamily: 'var(--f-body)' }}>รายการบิล</div>
               <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid var(--line-soft)', borderRadius: 8 }}>
-                <table className="data-table" style={{ fontSize: 13, width: '100%', tableLayout: 'auto' }}>
+                <table className="data-table" style={{ fontSize: 13, width: '100%', tableLayout: 'fixed' }}>
+                  <colgroup>
+                    <col style={{ width: '6%' }} />
+                    <col style={{ width: '18%' }} />
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '13%' }} />
+                    <col style={{ width: '34%' }} />
+                    <col style={{ width: '15%' }} />
+                  </colgroup>
                   <thead>
                     <tr>
-                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap' }}>วันที่</th>
-                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap' }}>เล่ม/เลขที่</th>
-                      <th style={{ fontFamily: 'var(--f-body)', whiteSpace: 'nowrap' }}>ทะเบียน</th>
-                      <th style={{ fontFamily: 'var(--f-body)', width: '100%' }}>หมายเหตุ</th>
-                      <th className="r" style={{ paddingRight: 12, fontFamily: 'var(--f-body)', whiteSpace: 'nowrap' }}>ยอด (฿)</th>
+                      <th style={{ fontFamily: 'var(--f-body)', textAlign: 'center' }}>#</th>
+                      <th style={{ fontFamily: 'var(--f-body)' }}>วันที่</th>
+                      <th style={{ fontFamily: 'var(--f-body)' }}>เล่ม/เลขที่</th>
+                      <th style={{ fontFamily: 'var(--f-body)' }}>ทะเบียน</th>
+                      <th style={{ fontFamily: 'var(--f-body)' }}>หมายเหตุ</th>
+                      <th className="r" style={{ paddingRight: 12, fontFamily: 'var(--f-body)' }}>ยอด (฿)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bills.map((b, i) => (
                       <tr key={b.id}>
+                        <td style={{ fontSize: 12, textAlign: 'center', color: 'var(--ink-3)' }}>{i + 1}</td>
                         <td style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{thaiShort(new Date(b.date))}</td>
                         <td className="mono" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{b.bill_book}/{b.bill_number}</td>
                         <td className="mono" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{b.vehicle_number || '—'}</td>
-                        <td style={{ fontSize: 12, color: 'var(--ink-2)' }}>{b.note || '—'}</td>
+                        <td style={{ fontSize: 12, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.note || '—'}</td>
                         <td className="r mono" style={{ paddingRight: 12, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>฿{fmt(b.amount)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan="4" style={{ textAlign: 'right', paddingRight: 12, fontWeight: 600, fontSize: 13, borderTop: '1px solid var(--line-soft)', fontFamily: 'var(--f-body)' }}>รวมทั้งสิ้น</td>
+                      <td colSpan="5" style={{ textAlign: 'right', paddingRight: 12, fontWeight: 600, fontSize: 13, borderTop: '1px solid var(--line-soft)', fontFamily: 'var(--f-body)' }}>รวมทั้งสิ้น</td>
                       <td className="r mono" style={{ paddingRight: 20, fontWeight: 700, fontSize: 15, borderTop: '1px solid var(--line-soft)', color: 'var(--rust)' }}>
                         ฿{Number(inv.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                       </td>
