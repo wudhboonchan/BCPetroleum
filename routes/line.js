@@ -180,7 +180,7 @@ router.get('/invoice/:invoiceId', async (req, res) => {
 
         const { data: invoice, error } = await supabase
             .from('invoices')
-            .select(`*, customers(name, phone, address)`)
+            .select(`*, customers(name, phone)`)
             .eq('id', invoiceId)
             .single();
 
