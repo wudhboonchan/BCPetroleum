@@ -649,15 +649,7 @@ export default function Customers() {
 
       {/* TABLE */}
       <div className="table-wrap">
-          <table className="data-table" style={{ tableLayout: 'fixed', width: '100%' }}>
-            <colgroup>
-              <col style={{ width: '8%' }} />
-              <col style={{ width: '30%' }} />
-              <col style={{ width: '14%' }} />
-              <col style={{ width: '14%' }} />
-              <col style={{ width: '12%' }} />
-              <col style={{ width: '22%' }} />
-            </colgroup>
+          <table className="data-table" style={{ width: '100%' }}>
             <thead>
               <tr>
                 <th>รหัส</th>
