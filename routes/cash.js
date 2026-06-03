@@ -682,6 +682,73 @@ router.delete('/credit-payment/:id', async (req, res) => {
 });
 
 // ============================================
+// GET Safe Record for specific date
+// ============================================
+router.get('/safe/:date', async (req, res) => {
+    try {
+        const { date } = req.params;
+
+        // Get today's safe record
+        const { data: safeRecord } = await supabase
+            .from('safe_records')
+            .select('*')
+            .eq('date', date)
+            .single();
+
+        // Get yesterday's closing balance (prev_closing_balance for today)
+        const yesterday = new Date(date);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        const { data: prevRecord } = await supabase
+            .from('safe_records')
+            .select('closing_balance, closing_bills')
+            .eq('date', yesterdayStr)
+            .single();
+
+        res.json({
+            safeRecord: safeRecord || null,
+            prevClosingBalance: prevRecord?.closing_balance ?? 0,
+            prevClosingBills: prevRecord?.closing_bills ?? {},
+        });
+    } catch (error) {
+        console.error('Get safe record error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================
+// POST/UPDATE Safe Record
+// ============================================
+router.post('/safe', async (req, res) => {
+    try {
+        const { date, prev_closing_balance, opening_balance, closing_balance, closing_bills, note } = req.body;
+        const userId = req.user.id;
+
+        const { data, error } = await supabase
+            .from('safe_records')
+            .upsert({
+                date,
+                prev_closing_balance: prev_closing_balance || 0,
+                opening_balance: opening_balance || 0,
+                closing_balance: closing_balance || 0,
+                closing_bills: closing_bills || {},
+                note,
+                user_id: userId,
+                updated_at: new Date().toISOString(),
+            }, { onConflict: 'date' })
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error('Save safe record error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================
 // GET Reconciliation Summary
 // ============================================
 router.get('/cash/summary/:date', async (req, res) => {

@@ -40,7 +40,7 @@ function calcMetrics(prices, nozzles, yest) {
     totalProfit: e91Profit + e95Profit + b7Profit,
     totalLiters: e91L + e95L + b7L,
     e91: { sales: e91Sales, profit: e91Profit, liters: e91L },
-    e95: { sales: e95Sales, profit: e95Sales, liters: e95L },
+    e95: { sales: e95Sales, profit: e95Profit, liters: e95L },
     b7:  { sales: b7Sales,  profit: b7Profit,  liters: b7L  },
     nozzles: liters,
   };

@@ -613,7 +613,7 @@ export default function Customers() {
       {/* PAGE HEADER */}
       <div className="page-header">
         <div>
-          <div className="page-eyebrow">Customers · ลูกค้า</div>
+          <div className="page-eyebrow">ลูกค้า · Customers</div>
           <h1 className="page-title">ลูกค้าเงินเชื่อ</h1>
         </div>
         <button className="btn btn-primary" onClick={openAdd}>+ เพิ่มลูกค้า</button>

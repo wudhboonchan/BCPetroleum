@@ -108,7 +108,7 @@ export default function Reports() {
 
       <div className="page-header">
         <div>
-          <div className="page-eyebrow">Reports · รายงาน</div>
+          <div className="page-eyebrow">รายงาน · Reports</div>
           <h1 className="page-title">รายงาน</h1>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>

@@ -342,7 +342,7 @@ export default function Credit() {
       {/* PAGE HEADER */}
       <div className="page-header">
         <div>
-          <div className="page-eyebrow">Credit · เงินเชื่อ</div>
+          <div className="page-eyebrow">เงินเชื่อ · Credit</div>
           <h1 className="page-title">จัดการเงินเชื่อ</h1>
         </div>
         <div className="page-subtitle">{thaiDate(new Date())}</div>

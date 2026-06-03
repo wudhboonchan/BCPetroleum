@@ -45,12 +45,24 @@ export default function Cash() {
   // Credit payments
   const [creditPayments, setCreditPayments] = useState([]);
 
+  // Safe (กล่องเซฟ)
+  const [safeRecord, setSafeRecord] = useState(null);
+  const [prevClosingBalance, setPrevClosingBalance] = useState(0);
+  const [prevClosingBills, setPrevClosingBills] = useState({});
+  const [safeCounts, setSafeCounts] = useState(Object.fromEntries(BILLS.map(b => [b.id + '_open', ''])));
+  const [safeCloseCounts, setSafeCloseCounts] = useState(Object.fromEntries(BILLS.map(b => [b.id + '_close', ''])));
+  const [safeSubmitting, setSafeSubmitting] = useState(false);
+
   // Summary (customers no longer needed — payments are auto-populated)
   const [metrics, setMetrics] = useState({});
   const [totalCreditSales, setTotalCreditSales] = useState(0);
   const [cashRecord, setCashRecord] = useState(null);
 
   const toast = useToast();
+
+  /* ── safe computed ── */
+  const safeOpenTotal = BILLS.reduce((s, b) => s + (parseInt(safeCounts[b.id + '_open']) || 0) * b.value, 0);
+  const safeCloseTotal = BILLS.reduce((s, b) => s + (parseInt(safeCloseCounts[b.id + '_close']) || 0) * b.value, 0);
 
   /* ── computed ── */
   const cashTotal = BILLS.reduce((s, b) => s + (parseInt(counts[b.id]) || 0) * b.value, 0);
@@ -98,6 +110,25 @@ export default function Cash() {
         setCounts(Object.fromEntries(BILLS.map(b => [b.id, ''])));
         setBankTransfer('');
       }
+
+      // Load safe record
+      try {
+        const safeRes = await api.get(`/api/safe/${date}`);
+        setSafeRecord(safeRes.safeRecord || null);
+        setPrevClosingBalance(safeRes.prevClosingBalance || 0);
+        setPrevClosingBills(safeRes.prevClosingBills || {});
+        const sr = safeRes.safeRecord;
+        if (sr) {
+          // We store totals per column, not per-bill breakdown for safe
+          // opening_balance and closing_balance are stored as totals
+          setSafeCounts(Object.fromEntries(BILLS.map(b => [b.id + '_open', ''])));
+          setSafeCloseCounts(Object.fromEntries(BILLS.map(b => [b.id + '_close', ''])));
+        } else {
+          setSafeCounts(Object.fromEntries(BILLS.map(b => [b.id + '_open', ''])));
+          setSafeCloseCounts(Object.fromEntries(BILLS.map(b => [b.id + '_close', ''])));
+        }
+      } catch { /* safe not critical */ }
+
     } catch { toast.error('โหลดข้อมูลไม่ได้'); }
     finally { setLoading(false); }
   }, []);
@@ -160,6 +191,24 @@ export default function Cash() {
     finally { setSubmitting(false); }
   };
 
+  /* ── save safe ── */
+  const handleSafeSave = async () => {
+    setSafeSubmitting(true);
+    try {
+      const closingBills = Object.fromEntries(BILLS.map(b => [b.id, parseInt(safeCloseCounts[b.id + '_close']) || 0]));
+      await api.post('/api/safe', {
+        date: selectedDate,
+        prev_closing_balance: prevClosingBalance,
+        opening_balance: safeOpenTotal,
+        closing_balance: safeCloseTotal,
+        closing_bills: closingBills,
+      });
+      toast.success('บันทึกยอดเซฟสำเร็จ');
+      load(selectedDate);
+    } catch (err) { toast.error(err.message || 'เกิดข้อผิดพลาด'); }
+    finally { setSafeSubmitting(false); }
+  };
+
   /* ── diff color ── */
   const diffColor = difference > 0 ? '#27ae60' : difference < 0 ? '#c0392b' : 'var(--ink-3)';
 
@@ -169,7 +218,7 @@ export default function Cash() {
 
       <div className="page-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 12 }}>
         <div>
-          <div className="page-eyebrow">Cash · เงินสด</div>
+          <div className="page-eyebrow">เงินสด · Cash</div>
           <h1 className="page-title">จัดการเงินสด · ปิดยอดรายวัน</h1>
         </div>
         <DatePicker value={selectedDate} onChange={v => setSelectedDate(v)} />
@@ -420,13 +469,132 @@ export default function Cash() {
         </div>
       </section>
 
+      {/* ── STEP 4: ยอดเงินในเซฟ ── */}
+      <section style={{ marginBottom: 32 }}>
+        <SectionLabel step={4} label="ยอดเงินในกล่องเซฟ" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+
+          {/* คอลัมน์ 1: ยอดปิดเมื่อวาน (read-only) */}
+          <div className="card" style={{ opacity: 0.85 }}>
+            <div className="card-header"><span className="card-title">ยอดปิดเมื่อวาน</span></div>
+            <table className="data-table" style={{ marginBottom: 8 }}>
+              <thead>
+                <tr><th>ชนิด</th><th className="r">จำนวน</th><th className="r">มูลค่า</th></tr>
+              </thead>
+              <tbody>
+                {BILLS.map(b => {
+                  const count = parseInt(prevClosingBills[b.id]) || 0;
+                  return (
+                    <tr key={b.id}>
+                      <td><span style={{ fontWeight: 700, fontSize: 12, padding: '2px 8px', borderRadius: 4, background: b.color + '22', color: b.color, fontFamily: 'var(--f-mono)' }}>{b.label}</span></td>
+                      <td className="r">
+                        <div style={{ height: 27.5, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontFamily: 'var(--f-mono)', fontSize: 14, color: count > 0 ? 'var(--ink)' : 'var(--ink-4)' }}>
+                          {count || '—'}
+                        </div>
+                      </td>
+                      <td className="r">
+                        <div style={{ height: 27.5, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontFamily: 'var(--f-mono)', fontSize: 14, color: count > 0 ? 'var(--ink)' : 'var(--ink-4)' }}>
+                          ฿{fmt(count * b.value)}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div style={{ padding: '10px 14px', background: 'var(--bg-deep)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <span style={{ fontWeight: 600, fontSize: 13 }}>รวม</span>
+              <span className="mono" style={{ fontWeight: 700, fontSize: 20 }}>฿{fmt(prevClosingBalance)}</span>
+            </div>
+          </div>
+
+          {/* คอลัมน์ 2: นับก่อนเอาของวันนี้ไปรวม */}
+          <div className="card">
+            <div className="card-header"><span className="card-title">นับเปิดเซฟ (ก่อนรวมวันนี้)</span></div>
+            <table className="data-table" style={{ marginBottom: 8 }}>
+              <thead>
+                <tr><th>ชนิด</th><th className="r">จำนวน</th><th className="r">มูลค่า</th></tr>
+              </thead>
+              <tbody>
+                {BILLS.map(b => {
+                  const count = parseInt(safeCounts[b.id + '_open']) || 0;
+                  return (
+                    <tr key={b.id}>
+                      <td><span style={{ fontWeight: 700, fontSize: 12, padding: '2px 8px', borderRadius: 4, background: b.color + '22', color: b.color, fontFamily: 'var(--f-mono)' }}>{b.label}</span></td>
+                      <td className="r">
+                        <input type="number" min="0" placeholder="0"
+                          value={safeCounts[b.id + '_open']}
+                          onChange={e => setSafeCounts(c => ({ ...c, [b.id + '_open']: e.target.value }))}
+                          style={{ width: 80, textAlign: 'right', fontFamily: 'var(--f-mono)', border: '1px solid var(--line-soft)', borderRadius: 4, padding: '3px 8px' }}
+                        />
+                      </td>
+                      <td className="r mono" style={{ color: count > 0 ? 'var(--ink)' : 'var(--ink-4)' }}>฿{fmt(count * b.value)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div style={{ padding: '10px 14px', background: 'var(--bg-deep)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <span style={{ fontWeight: 600, fontSize: 13 }}>รวม</span>
+              <span className="mono" style={{ fontWeight: 700, fontSize: 20 }}>฿{fmt(safeOpenTotal)}</span>
+            </div>
+            {safeRecord && (
+              <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-4)', textAlign: 'right' }}>บันทึกแล้ว: ฿{fmt(safeRecord.opening_balance)}</div>
+            )}
+          </div>
+
+          {/* คอลัมน์ 3: ยอดปิดเซฟวันนี้ */}
+          <div className="card">
+            <div className="card-header"><span className="card-title">นับปิดเซฟวันนี้</span></div>
+            <table className="data-table" style={{ marginBottom: 8 }}>
+              <thead>
+                <tr><th>ชนิด</th><th className="r">จำนวน</th><th className="r">มูลค่า</th></tr>
+              </thead>
+              <tbody>
+                {BILLS.map(b => {
+                  const count = parseInt(safeCloseCounts[b.id + '_close']) || 0;
+                  return (
+                    <tr key={b.id}>
+                      <td><span style={{ fontWeight: 700, fontSize: 12, padding: '2px 8px', borderRadius: 4, background: b.color + '22', color: b.color, fontFamily: 'var(--f-mono)' }}>{b.label}</span></td>
+                      <td className="r">
+                        <input type="number" min="0" placeholder="0"
+                          value={safeCloseCounts[b.id + '_close']}
+                          onChange={e => setSafeCloseCounts(c => ({ ...c, [b.id + '_close']: e.target.value }))}
+                          style={{ width: 80, textAlign: 'right', fontFamily: 'var(--f-mono)', border: '1px solid var(--line-soft)', borderRadius: 4, padding: '3px 8px' }}
+                        />
+                      </td>
+                      <td className="r mono" style={{ color: count > 0 ? 'var(--ink)' : 'var(--ink-4)' }}>฿{fmt(count * b.value)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div style={{ padding: '10px 14px', background: 'var(--bg-deep)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+              <span style={{ fontWeight: 600, fontSize: 13 }}>รวมปิดเซฟ</span>
+              <span className="mono" style={{ fontWeight: 700, fontSize: 20 }}>฿{fmt(safeCloseTotal)}</span>
+            </div>
+            {safeRecord && (
+              <div style={{ marginBottom: 12, fontSize: 12, color: 'var(--ink-4)', textAlign: 'right' }}>บันทึกแล้ว: ฿{fmt(safeRecord.closing_balance)}</div>
+            )}
+            <button
+              type="button"
+              className="btn btn-primary w-full"
+              disabled={safeSubmitting}
+              onClick={handleSafeSave}
+              style={{ fontSize: 14, padding: '12px 0', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+              {safeSubmitting ? 'กำลังบันทึก…' : 'บันทึกยอดเซฟวันนี้'}
+            </button>
+          </div>
+
+        </div>
+      </section>
+
       {/* ── สรุปยอดปิดบัญชี ── */}
       {(cashRecord || totalRevenue !== 0) && (
         <section style={{ marginBottom: 32 }}>
           <SectionLabel step="สรุป" label="สรุปยอดปิดบัญชีประจำวัน" />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
 
-            {/* รายรับจริง */}
             <div className="card">
               <div style={{ marginBottom: 6 }}>
                 <span style={{ fontFamily: 'var(--f-mono)', fontSize: 11, fontWeight: 700, color: '#27ae60', letterSpacing: '0.05em', textTransform: 'uppercase' }}>รายรับจริง</span>
@@ -441,7 +609,6 @@ export default function Cash() {
               </div>
             </div>
 
-            {/* ยอดที่ควรได้รับ */}
             <div className="card">
               <div style={{ marginBottom: 6 }}>
                 <span style={{ fontFamily: 'var(--f-mono)', fontSize: 11, fontWeight: 700, color: '#2563af', letterSpacing: '0.05em', textTransform: 'uppercase' }}>ยอดที่ควรได้รับ</span>
@@ -456,7 +623,6 @@ export default function Cash() {
               </div>
             </div>
 
-            {/* ผลต่าง */}
             <div className="card">
               <div style={{ marginBottom: 6 }}>
                 <span style={{ fontFamily: 'var(--f-mono)', fontSize: 11, fontWeight: 700, color: diffColor, letterSpacing: '0.05em', textTransform: 'uppercase' }}>ผลต่าง</span>

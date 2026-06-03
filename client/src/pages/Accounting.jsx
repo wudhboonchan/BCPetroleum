@@ -132,8 +132,8 @@ export default function Accounting() {
 
       <div className="page-header">
         <div>
-          <div className="page-eyebrow">Accounting · บัญชี</div>
-          <h1 className="page-title">การเงิน</h1>
+          <div className="page-eyebrow">บัญชี · Accounting</div>
+          <h1 className="page-title">บัญชีการเงิน</h1>
         </div>
         <DatePicker value={selectedDate} onChange={v => setSelectedDate(v)} />
       </div>
