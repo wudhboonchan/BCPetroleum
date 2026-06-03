@@ -90,8 +90,6 @@ body {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 24px;
-  max-width: 1440px;
-  margin: 0 auto;
   padding: 16px var(--pad-page-x);
   background: color-mix(in oklch, var(--bg) 88%, transparent);
   backdrop-filter: blur(20px) saturate(140%);
