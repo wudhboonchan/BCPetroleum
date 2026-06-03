@@ -315,7 +315,7 @@ export default function Daily() {
             ตั้งค่าถัง
           </button>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 0, borderTop: '1px solid var(--line-soft)', borderBottom: '1px solid var(--line-soft)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 0, borderTop: '1px solid var(--line-soft)', borderBottom: '1px solid var(--line-soft)' }}>
           {inventory.map((item, idx) => {
             const remaining = Number(item.current_liters) || 0;
             const threshold = Number(item.alert_threshold) || 1000;
@@ -397,7 +397,7 @@ export default function Daily() {
         <div className="section-hd">
           <span className="eyebrow">ราคาน้ำมันวันนี้</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           {FUEL_CARDS.map(({ fuel, label, costKey, sellKey }) => (
             <div key={fuel} className="card" style={{ padding: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -424,7 +424,7 @@ export default function Daily() {
         <div className="section-hd">
           <span className="eyebrow">ค่ามิเตอร์หัวจ่าย</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: 24 }}>
           {[1, 2].map(pump => (
             <div key={pump} className="card" style={{ padding: 24 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid var(--line-soft)' }}>

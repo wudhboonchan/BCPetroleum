@@ -40,40 +40,42 @@ export default function TopBar() {
   return (
     <>
       <header className="top-bar">
-        <NavLink to="/" className="top-bar-brand">
-          <div className="brand-mark" />
-          <span>BC Petroleum</span>
-        </NavLink>
+        <div className="top-bar-inner">
+          <NavLink to="/" className="top-bar-brand">
+            <div className="brand-mark" />
+            <span>BC Petroleum</span>
+          </NavLink>
 
-        <nav className={`top-bar-nav${mobileOpen ? ' mobile-open' : ''}`}>
-          {NAV.map(({ to, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-              onClick={() => setMobileOpen(false)}
-            >
-              {label}
-            </NavLink>
-          ))}
-        </nav>
+          <nav className={`top-bar-nav${mobileOpen ? ' mobile-open' : ''}`}>
+            {NAV.map(({ to, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                onClick={() => setMobileOpen(false)}
+              >
+                {label}
+              </NavLink>
+            ))}
+          </nav>
 
-        <div className="top-bar-actions">
-          <span className="live-clock mono">{clock}</span>
-          <div className="user-profile-container">
-            <button
-              className="user-profile"
-              onClick={(e) => { e.stopPropagation(); setDropOpen(o => !o); }}
-            >
-              <div className="user-avatar">{avatar}</div>
-              <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{user?.name || user?.username}</span>
-              <span className="dropdown-arrow">▾</span>
-            </button>
-            <div className={`user-dropdown${dropOpen ? ' open' : ''}`}>
-              <button className="dropdown-item" onClick={() => { setDropOpen(false); setLogoutModal(true); }}>
-                ออกจากระบบ
+          <div className="top-bar-actions">
+            <span className="live-clock mono">{clock}</span>
+            <div className="user-profile-container">
+              <button
+                className="user-profile"
+                onClick={(e) => { e.stopPropagation(); setDropOpen(o => !o); }}
+              >
+                <div className="user-avatar">{avatar}</div>
+                <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{user?.name || user?.username}</span>
+                <span className="dropdown-arrow">▾</span>
               </button>
+              <div className={`user-dropdown${dropOpen ? ' open' : ''}`}>
+                <button className="dropdown-item" onClick={() => { setDropOpen(false); setLogoutModal(true); }}>
+                  ออกจากระบบ
+                </button>
+              </div>
             </div>
           </div>
         </div>

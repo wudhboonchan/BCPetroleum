@@ -386,7 +386,7 @@ export default function Credit() {
           </div>
 
           {/* แถว 2 — ลูกค้า เล่มที่ เลขที่ ยอดเงิน */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.5fr', gap: 20, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 20, marginBottom: 20 }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">ลูกค้า *</label>
               <select className="form-input" value={form.customerId}
@@ -413,7 +413,7 @@ export default function Credit() {
           </div>
 
           {/* แถว 3 — ทะเบียนรถ หมายเหตุ ปุ่มบันทึก */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: 20, alignItems: 'flex-end' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, alignItems: 'flex-end' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">ทะเบียนรถ</label>
               <input className="form-input" placeholder="ก-1234 สบ" value={form.vehicleNumber}
@@ -436,7 +436,7 @@ export default function Credit() {
                 onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
               />
             </div>
-            <button type="submit" className="btn btn-primary" style={{ padding: '10px 32px', fontSize: 15 }} disabled={submitting}>
+            <button type="submit" className="btn btn-primary" style={{ padding: '10px 32px', fontSize: 15, height: 42, justifyContent: 'center' }} disabled={submitting}>
               {submitting ? 'กำลังบันทึก…' : '✓ บันทึกรายการ'}
             </button>
           </div>
@@ -488,7 +488,7 @@ export default function Credit() {
         </div>
 
         {/* filters */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 16 }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">วันที่เริ่มต้น</label>
             <DatePicker value={fStart} onChange={v => setFStart(v)} />

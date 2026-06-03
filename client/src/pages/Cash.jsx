@@ -185,7 +185,7 @@ export default function Cash() {
               ⚠️ ยังไม่มีข้อมูลราคาน้ำมันสำหรับวันนี้ — กรุณากรอกราคาในหน้า <strong>รายวัน</strong> ก่อนใช้ฟังก์ชันนี้
             </div>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24, marginBottom: 20 }}>
             {FUEL_TYPES.map(ft => {
               const price = prices[ft.priceKey] || 0;
               const noPriceData = !price;
@@ -275,7 +275,7 @@ export default function Cash() {
       <section style={{ marginBottom: 32 }}>
         <SectionLabel step={2} label="นับเงินสดและยอดโอน" />
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 32 }}>
             {/* นับธนบัตร */}
             <div className="card">
               <div className="card-header"><span className="card-title">นับธนบัตร / เหรียญ</span></div>
@@ -424,7 +424,7 @@ export default function Cash() {
       {(cashRecord || totalRevenue !== 0) && (
         <section style={{ marginBottom: 32 }}>
           <SectionLabel step="สรุป" label="สรุปยอดปิดบัญชีประจำวัน" />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
 
             {/* รายรับจริง */}
             <div className="card">

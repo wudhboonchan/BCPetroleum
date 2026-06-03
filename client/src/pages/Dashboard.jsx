@@ -336,7 +336,7 @@ export default function Dashboard() {
       {/* HERO — ยอดขาย (ซ้าย) + pay split (ขวา) */}
       <section style={{
         marginTop: 32, marginBottom: 48,
-        display: 'grid', gridTemplateColumns: '1fr 1fr',
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
         gap: 48, alignItems: 'center',
       }}>
         {/* ซ้าย: ยอดขาย */}
@@ -413,7 +413,7 @@ export default function Dashboard() {
       <SevenDayBars data={dashData?.last7Days} />
 
       {/* FUEL DONUT + NOZZLE CHART */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 32, marginBottom: 80 }} id="fuelNozzleGrid">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 32, marginBottom: 80 }} id="fuelNozzleGrid">
         <div className="card">
           <div className="card-header" style={{ marginBottom: 20 }}>
             <span style={{ fontSize: 15, color: 'var(--ink-2)' }}>สัดส่วนเชื้อเพลิง</span>
