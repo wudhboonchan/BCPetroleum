@@ -538,6 +538,31 @@ export default function Cash() {
               <span style={{ fontWeight: 600, fontSize: 13 }}>รวม</span>
               <span className="mono" style={{ fontWeight: 700, fontSize: 20 }}>฿{fmt(safeOpenTotal)}</span>
             </div>
+            {(() => {
+              const diff = safeOpenTotal - prevClosingBalance;
+              if (prevClosingBalance === 0 && safeOpenTotal === 0) return null;
+              if (diff === 0) return (
+                <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'rgba(39,174,96,0.08)', border: '1px solid rgba(39,174,96,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: '#27ae60' }}>ยอดตรงกับวานนี้</span>
+                  <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: '#27ae60' }}>฿0</span>
+                </div>
+              );
+              if (diff < 0) return (
+                <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'rgba(37,99,175,0.08)', border: '1px solid rgba(37,99,175,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: '#2563af' }}>นำออกไปใช้</span>
+                  <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: '#2563af' }}>-฿{fmt(Math.abs(diff))}</span>
+                </div>
+              );
+              return (
+                <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#c0392b' }}>⚠ เงินเกินกว่าวานนี้</span>
+                    <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: '#c0392b' }}>+฿{fmt(diff)}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#c0392b' }}>ยอดเปิดเซฟสูงกว่ายอดปิดเมื่อวาน — กรุณาตรวจสอบอีกครั้ง</div>
+                </div>
+              );
+            })()}
             {safeRecord && (
               <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-4)', textAlign: 'right' }}>บันทึกแล้ว: ฿{fmt(safeRecord.opening_balance)}</div>
             )}

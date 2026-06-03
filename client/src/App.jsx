@@ -1,29 +1,40 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { auth } from './lib/auth.js';
 import { ToastProvider } from './components/Toast.jsx';
 import TopBar from './components/TopBar.jsx';
-import Loading from './components/Loading.jsx';
-
-const Login      = lazy(() => import('./pages/Login.jsx'));
-const Dashboard  = lazy(() => import('./pages/Dashboard.jsx'));
-const Daily      = lazy(() => import('./pages/Daily.jsx'));
-const Credit     = lazy(() => import('./pages/Credit.jsx'));
-const Cash       = lazy(() => import('./pages/Cash.jsx'));
-const Accounting = lazy(() => import('./pages/Accounting.jsx'));
-const Customers  = lazy(() => import('./pages/Customers.jsx'));
-const Reports       = lazy(() => import('./pages/Reports.jsx'));
-const PublicInvoice = lazy(() => import('./pages/PublicInvoice.jsx'));
+import Login      from './pages/Login.jsx';
+import Dashboard  from './pages/Dashboard.jsx';
+import Daily      from './pages/Daily.jsx';
+import Credit     from './pages/Credit.jsx';
+import Cash       from './pages/Cash.jsx';
+import Accounting from './pages/Accounting.jsx';
+import Customers  from './pages/Customers.jsx';
+import Reports       from './pages/Reports.jsx';
+import PublicInvoice from './pages/PublicInvoice.jsx';
 
 function RequireAuth({ children }) {
   return auth.isAuthenticated() ? children : <Navigate to="/login" replace />;
 }
 
-function Layout({ children }) {
+function AppShell() {
+  const location = useLocation();
+  const noBar = location.pathname === '/login' || location.pathname.startsWith('/invoice/');
+
   return (
     <>
-      <TopBar />
-      <Suspense fallback={<Loading />}>{children}</Suspense>
+      {!noBar && auth.isAuthenticated() && <TopBar />}
+      <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
+          <Route path="/daily" element={<RequireAuth><Daily /></RequireAuth>} />
+          <Route path="/credit" element={<RequireAuth><Credit /></RequireAuth>} />
+          <Route path="/cash" element={<RequireAuth><Cash /></RequireAuth>} />
+          <Route path="/accounting" element={<RequireAuth><Accounting /></RequireAuth>} />
+          <Route path="/customers" element={<RequireAuth><Customers /></RequireAuth>} />
+          <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
+          <Route path="/invoice/:id" element={<PublicInvoice />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
     </>
   );
 }
@@ -32,39 +43,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ToastProvider>
-        <Suspense fallback={<Loading />}>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={
-              <RequireAuth>
-                <Layout><Dashboard /></Layout>
-              </RequireAuth>
-            } />
-            <Route path="/daily" element={
-              <RequireAuth><Layout><Daily /></Layout></RequireAuth>
-            } />
-            <Route path="/credit" element={
-              <RequireAuth><Layout><Credit /></Layout></RequireAuth>
-            } />
-            <Route path="/cash" element={
-              <RequireAuth><Layout><Cash /></Layout></RequireAuth>
-            } />
-            <Route path="/accounting" element={
-              <RequireAuth><Layout><Accounting /></Layout></RequireAuth>
-            } />
-            <Route path="/customers" element={
-              <RequireAuth><Layout><Customers /></Layout></RequireAuth>
-            } />
-            <Route path="/reports" element={
-              <RequireAuth><Layout><Reports /></Layout></RequireAuth>
-            } />
-            {/* Public — ไม่ต้อง login */}
-            <Route path="/invoice/:id" element={
-              <Suspense fallback={<Loading />}><PublicInvoice /></Suspense>
-            } />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
+        <AppShell />
       </ToastProvider>
     </BrowserRouter>
   );
