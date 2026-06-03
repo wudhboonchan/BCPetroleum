@@ -55,6 +55,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scrollbar-gutter: stable; }
 
 /* ── ซ่อน spinner ปุ่มลูกศรบน input[type=number] ทุกจุด ── */
 input[type="number"]::-webkit-inner-spin-button,
