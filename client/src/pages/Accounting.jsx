@@ -5,7 +5,7 @@ import { api } from '../lib/api.js';
 import { useToast } from '../components/Toast.jsx';
 import Loading from '../components/Loading.jsx';
 import Modal from '../components/Modal.jsx';
-import { fmt, todayStr, thaiDate } from '../lib/utils.js';
+import { fmt, todayStr, thaiDate, thaiShort } from '../lib/utils.js';
 
 // รายการที่ระบบสร้างอัตโนมัติ — ห้ามลบ
 const AUTO_SOURCES = ['cash_management', 'daily_profit_transfer', 'credit_payment_confirm'];
@@ -147,12 +147,20 @@ function AutoHint({ type }) {
 }
 
 function cleanDesc(desc) {
-  return (desc || '')
+  if (!desc) return '';
+  let cleaned = desc
     .replace(/\s*\(อัตโนมัติ\)/g, '')
     .replace(/\be91\b/gi, 'E91')
     .replace(/\be95\b/gi, 'E95')
-    .replace(/\bb7\b/gi, 'B7')
-    .trim();
+    .replace(/\bb7\b/gi, 'B7');
+  
+  // Format long decimal cost prices (e.g. 3.2666666666666666 to 3.27)
+  cleaned = cleaned.replace(/@\s*฿\s*(\d+\.?\d*)\s*\/ลิตร/g, (match, priceStr) => {
+    const price = parseFloat(priceStr);
+    return `@ ฿${price.toFixed(2)}/ลิตร`;
+  });
+
+  return cleaned.trim();
 }
 
 export default function Accounting() {
@@ -168,6 +176,9 @@ export default function Accounting() {
   const [customers, setCustomers] = useState([]);
   const [deleteModal, setDeleteModal] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [detailModal, setDetailModal] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailData, setDetailData] = useState([]);
   const toast = useToast();
 
   const load = async () => {
@@ -190,11 +201,76 @@ export default function Accounting() {
   useEffect(() => { load(); }, [selectedDate]);
 
   const openModal = (type) => {
-    setForm({ amount: '', note: '', customerId: '', direction: 'out' });
+    setForm({
+      amount: '',
+      note: '',
+      customerId: '',
+      direction: 'out',
+      fuelType: 'e91',
+      liters: '',
+      totalCost: '',
+      paymentStatus: 'unpaid',
+      paymentMethod: 'cash'
+    });
     setModal(type);
   };
 
+  const openDetailModal = async (key) => {
+    setDetailModal(key);
+    setDetailLoading(true);
+    setDetailData([]);
+    try {
+      if (key === 'cash' || key === 'profit' || key === 'bank') {
+        const res = await api.get(`/api/accounting/account-details/${key}/${selectedDate}`);
+        setDetailData(res.transactions || []);
+      } else if (key === 'receivables') {
+        const res = await api.get(`/api/accounting/receivables/${selectedDate}`);
+        setDetailData(res.receivables || {});
+      } else if (key === 'payables') {
+        const res = await api.get(`/api/accounting/payables/${selectedDate}`);
+        setDetailData(res.payables || {});
+      }
+    } catch {
+      toast.error('ไม่สามารถโหลดรายละเอียดได้');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   const save = async () => {
+    if (modal === 'fuel_investment') {
+      if (!form.liters || isNaN(parseFloat(form.liters)) || parseFloat(form.liters) <= 0) {
+        return toast.error('กรุณากรอกจำนวนลิตรให้ถูกต้อง');
+      }
+      if (!form.totalCost || isNaN(parseFloat(form.totalCost)) || parseFloat(form.totalCost) <= 0) {
+        return toast.error('กรุณากรอกจำนวนเงินรวมให้ถูกต้อง');
+      }
+      setSaving(true);
+      try {
+        const liters = parseFloat(form.liters);
+        const totalCost = parseFloat(form.totalCost);
+        const costPerLiter = totalCost / liters;
+
+        await api.post('/api/accounting/fuel-investment', {
+          date: selectedDate,
+          fuel_type: form.fuelType,
+          liters,
+          cost_per_liter: costPerLiter,
+          payment_status: form.paymentStatus,
+          payment_method: form.paymentStatus === 'paid' ? form.paymentMethod : null,
+          note: form.note || '',
+        });
+        toast.success('บันทึกสำเร็จ');
+        setModal(null);
+        load();
+      } catch (err) {
+        toast.error(err.message || 'เกิดข้อผิดพลาด');
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     if (!form.amount || isNaN(parseFloat(form.amount))) return toast.error('กรอกจำนวนเงินให้ถูกต้อง');
     setSaving(true);
     try {
@@ -235,7 +311,30 @@ export default function Accounting() {
       {modal && (
         <div className="modal-backdrop" onClick={() => setModal(null)}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
-            <div className="modal-title">{TX_LABEL[modal]}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                {ICONS[modal] && <span style={{ display: 'flex', color: 'var(--ink)' }}>{ICONS[modal]}</span>}
+                {TX_LABEL[modal]}
+              </div>
+              <button
+                type="button"
+                onClick={() => setModal(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 22,
+                  cursor: 'pointer',
+                  color: 'var(--ink-3)',
+                  padding: 4,
+                  lineHeight: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                &times;
+              </button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
               {modal === 'other' && (
                 <div className="form-group">
@@ -250,35 +349,107 @@ export default function Accounting() {
                   </div>
                 </div>
               )}
-              <div className="form-group">
-                <label className="form-label">จำนวนเงิน (฿) *</label>
-                <input type="number" step="0.01" min="0" className="form-input" autoFocus
-                  placeholder="0.00" value={form.amount}
-                  onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
-              </div>
-              {modal === 'debt_payment' && (
-                <div className="form-group">
-                  <label className="form-label">ลูกค้า / เจ้าหนี้</label>
-                  <select className="form-input" value={form.customerId}
-                    onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))}>
-                    <option value="">เลือก (ไม่บังคับ)</option>
-                    {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
+
+              {modal === 'fuel_investment' ? (
+                <>
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>ประเภทน้ำมัน</label>
+                    <select className="form-input" value={form.fuelType}
+                      onChange={e => setForm(f => ({ ...f, fuelType: e.target.value }))}>
+                      <option value="e91">แก๊สโซฮอล์ 91</option>
+                      <option value="e95">แก๊สโซฮอล์ 95</option>
+                      <option value="b7">ดีเซล B7</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>จำนวนลิตร</label>
+                    <input type="number" step="0.001" min="0" className="form-input" autoFocus
+                      placeholder="0.000" value={form.liters}
+                      onChange={e => setForm(f => ({ ...f, liters: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && save()} />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>จำนวนเงินรวม (บาท)</label>
+                    <input type="number" step="0.01" min="0" className="form-input"
+                      placeholder="0.00" value={form.totalCost}
+                      onChange={e => setForm(f => ({ ...f, totalCost: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && save()} />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>สถานะการจ่ายเงิน</label>
+                    <select className="form-input" value={form.paymentStatus}
+                      onChange={e => setForm(f => ({ ...f, paymentStatus: e.target.value }))}>
+                      <option value="unpaid">ยังไม่ได้จ่าย</option>
+                      <option value="paid">จ่ายแล้ว</option>
+                    </select>
+                  </div>
+
+                  {form.paymentStatus === 'paid' && (
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>ช่องทางการจ่ายเงิน</label>
+                      <select className="form-input" value={form.paymentMethod}
+                        onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value }))}>
+                        <option value="cash">เงินสด</option>
+                        <option value="transfer">เงินโอน</option>
+                      </select>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">จำนวนเงิน (฿) *</label>
+                    <input type="number" step="0.01" min="0" className="form-input" autoFocus
+                      placeholder="0.00" value={form.amount}
+                      onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && save()} />
+                  </div>
+                  {modal === 'debt_payment' && (
+                    <div className="form-group">
+                      <label className="form-label">ลูกค้า / เจ้าหนี้</label>
+                      <select className="form-input" value={form.customerId}
+                        onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))}>
+                        <option value="">เลือก (ไม่บังคับ)</option>
+                        {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  <div className="form-group">
+                    <label className="form-label">หมายเหตุ</label>
+                    <input className="form-input" placeholder="รายละเอียดเพิ่มเติม..."
+                      value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && save()} />
+                  </div>
+                </>
               )}
-              <div className="form-group">
-                <label className="form-label">หมายเหตุ</label>
-                <input className="form-input" placeholder="รายละเอียดเพิ่มเติม..."
-                  value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                  onKeyDown={e => e.key === 'Enter' && save()} />
-              </div>
             </div>
-            <div className="modal-footer">
-              <button className="btn" onClick={() => setModal(null)}>ยกเลิก</button>
-              <button className="btn btn-primary" onClick={save} disabled={!form.amount || saving}>
+            {modal === 'fuel_investment' ? (
+              <button
+                className="btn btn-primary w-full"
+                onClick={save}
+                disabled={saving || !form.liters || !form.totalCost}
+                style={{
+                  justifyContent: 'center',
+                  padding: '12px 16px',
+                  fontSize: 16,
+                  fontWeight: 500,
+                  borderRadius: 10,
+                  marginTop: 8
+                }}
+              >
                 {saving ? 'กำลังบันทึก…' : 'บันทึก'}
               </button>
-            </div>
+            ) : (
+              <div className="modal-footer">
+                <button className="btn" onClick={() => setModal(null)}>ยกเลิก</button>
+                <button className="btn btn-primary" onClick={save} disabled={!form.amount || saving}>
+                  {saving ? 'กำลังบันทึก…' : 'บันทึก'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -300,6 +471,232 @@ export default function Accounting() {
         />
       )}
 
+      {detailModal && (
+        <div className="modal-backdrop" onClick={() => setDetailModal(null)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 680, width: '90%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid var(--line-soft)' }}>
+              <div className="modal-title" style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
+                {detailModal === 'cash' && 'รายละเอียดเงินสดหมุนเวียน'}
+                {detailModal === 'profit' && 'รายละเอียดเงินกำไรสะสม'}
+                {detailModal === 'bank' && 'รายละเอียดบัญชีธนาคาร'}
+                {detailModal === 'receivables' && 'รายละเอียดเป็นลูกหนี้ (ค้างค่าลงทุน)'}
+                {detailModal === 'payables' && 'รายละเอียดเป็นเจ้าหนี้ (เครดิตลูกค้า)'}
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailModal(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 24,
+                  cursor: 'pointer',
+                  color: 'var(--ink-3)',
+                  padding: 4,
+                  lineHeight: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div style={{ maxHeight: 400, overflowY: 'auto', marginBottom: 20 }}>
+              {detailLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
+                  <div className="loading-spinner"></div>
+                </div>
+              ) : (
+                <>
+                  {(detailModal === 'cash' || detailModal === 'profit' || detailModal === 'bank') && (
+                    <div className="table-wrap">
+                      <table className="data-table" style={{ fontSize: 13, width: '100%', tableLayout: 'fixed' }}>
+                        <colgroup>
+                          <col style={{ width: '110px' }} />
+                          <col />
+                          <col style={{ width: '100px' }} />
+                          <col style={{ width: '100px' }} />
+                          <col style={{ width: '120px' }} />
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th>วันที่</th>
+                            <th>รายการ</th>
+                            <th className="r">รายรับ</th>
+                            <th className="r">รายจ่าย</th>
+                            <th className="r" style={{ paddingRight: 10 }}>ยอดคงเหลือ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detailData.length === 0 ? (
+                            <tr>
+                              <td colSpan="5" className="empty-state">ไม่มีรายการธุรกรรม</td>
+                            </tr>
+                          ) : (
+                            detailData.map(t => {
+                              const amount = parseFloat(t.amount);
+                              const isCredit = amount > 0;
+                              const dateStr = thaiShort(new Date(t.date + 'T00:00:00'));
+                              const cleanDescStr = t.description ? cleanDesc(t.description) : (TX_LABEL[t.transaction_type] || t.transaction_type);
+                              return (
+                                <tr key={t.id}>
+                                  <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dateStr}</td>
+                                  <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={cleanDescStr}>{cleanDescStr}</td>
+                                  <td className="r tnum" style={{ color: '#27ae60', fontWeight: 500 }}>
+                                    {isCredit ? `฿${fmt(amount)}` : '—'}
+                                  </td>
+                                  <td className="r tnum" style={{ color: 'var(--rust)', fontWeight: 500 }}>
+                                    {!isCredit ? `฿${fmt(Math.abs(amount))}` : '—'}
+                                  </td>
+                                  <td className="r tnum" style={{ fontWeight: 600, paddingRight: 10 }}>
+                                    ฿{fmt(t.running_balance)}
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {detailModal === 'receivables' && (() => {
+                    const combinedList = [];
+                    if (detailData.fuel) {
+                      detailData.fuel.forEach(item => combinedList.push({
+                        id: `fuel-${item.id}`,
+                        date: item.date,
+                        description: `ลงทุนน้ำมัน ${item.fuel_type.toUpperCase()} ${item.liters} ลิตร @ ฿${fmt(item.cost_per_liter)}/ลิตร`,
+                        remaining: parseFloat(item.remaining_amount),
+                        status: item.payment_status
+                      }));
+                    }
+                    if (detailData.water) {
+                      detailData.water.forEach(item => combinedList.push({
+                        id: `water-${item.id}`,
+                        date: item.date,
+                        description: `ลงทุนน้ำดื่มสมนาคุณ ${item.packs} แพ็ค @ ฿${fmt(item.cost_per_pack)}/แพ็ค`,
+                        remaining: parseFloat(item.remaining_amount),
+                        status: item.payment_status
+                      }));
+                    }
+                    if (detailData.loan) {
+                      detailData.loan.forEach(item => combinedList.push({
+                        id: `loan-${item.id}`,
+                        date: item.date,
+                        description: `เงินกู้ยืม: ${item.description}`,
+                        remaining: parseFloat(item.remaining_amount),
+                        status: item.payment_status
+                      }));
+                    }
+                    combinedList.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                    return (
+                      <div className="table-wrap">
+                        <table className="data-table" style={{ fontSize: 13, width: '100%', tableLayout: 'fixed' }}>
+                          <colgroup>
+                            <col style={{ width: '110px' }} />
+                            <col />
+                            <col style={{ width: '110px' }} />
+                            <col style={{ width: '100px' }} />
+                          </colgroup>
+                          <thead>
+                            <tr>
+                              <th>วันที่</th>
+                              <th>รายการ</th>
+                              <th className="r">ยอดค้างชำระ</th>
+                              <th className="r" style={{ paddingRight: 10 }}>สถานะ</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {combinedList.length === 0 ? (
+                              <tr>
+                                <td colSpan="4" className="empty-state">ไม่มีรายการลูกหนี้ค้างชำระ</td>
+                              </tr>
+                            ) : (
+                              combinedList.map(item => {
+                                const dateStr = thaiShort(new Date(item.date + 'T00:00:00'));
+                                return (
+                                  <tr key={item.id}>
+                                    <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dateStr}</td>
+                                    <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.description}>{item.description}</td>
+                                    <td className="r tnum" style={{ color: '#27ae60', fontWeight: 500 }}>
+                                      ฿{fmt(item.remaining)}
+                                    </td>
+                                    <td className="r" style={{ paddingRight: 10 }}>
+                                      {item.status === 'unpaid' ? (
+                                        <span className="tag amber">ยังไม่ชำระ</span>
+                                      ) : (
+                                        <span className="tag cobalt">ชำระบางส่วน</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
+
+                  {detailModal === 'payables' && (
+                    <div className="table-wrap">
+                      <table className="data-table" style={{ fontSize: 13, width: '100%', tableLayout: 'fixed' }}>
+                        <colgroup>
+                          <col style={{ width: '110px' }} />
+                          <col />
+                          <col style={{ width: '110px' }} />
+                          <col style={{ width: '100px' }} />
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th>วันที่</th>
+                            <th>ลูกค้า</th>
+                            <th className="r">ยอดค้างชำระ</th>
+                            <th className="r" style={{ paddingRight: 10 }}>สถานะ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(!detailData.credit || detailData.credit.length === 0) ? (
+                            <tr>
+                              <td colSpan="4" className="empty-state">ไม่มีรายการเจ้าหนี้ค้างชำระ</td>
+                            </tr>
+                          ) : (
+                            detailData.credit.map((group, index) => {
+                              const dateStr = thaiShort(new Date(group.date + 'T00:00:00'));
+                              return (
+                                <tr key={index}>
+                                  <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dateStr}</td>
+                                  <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${group.customer?.name || 'ไม่ระบุชื่อ'} (${group.bill_count} บิล)`}>
+                                    {group.customer?.name || 'ไม่ระบุชื่อ'} ({group.bill_count} บิล)
+                                  </td>
+                                  <td className="r tnum" style={{ color: 'var(--rust)', fontWeight: 500 }}>
+                                    ฿{fmt(group.total_amount)}
+                                  </td>
+                                  <td className="r" style={{ paddingRight: 10 }}>
+                                    <span className="tag rust">ค้างชำระ</span>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            
+            <div className="modal-footer" style={{ borderTop: '1px solid var(--line-soft)', paddingTop: 16 }}>
+              <button className="btn" onClick={() => setDetailModal(null)}>ปิด</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="page-header">
         <div>
@@ -314,13 +711,17 @@ export default function Accounting() {
       {/* 5 Metrics Strip */}
       <div className="metrics-strip" style={{ gridTemplateColumns: 'repeat(5, 1fr)', marginBottom: 36 }}>
         {[
-          { label: 'เงินสดหมุนเวียน',           value: balances.cash_balance },
-          { label: 'เงินกำไรสะสม',              value: balances.profit_balance },
-          { label: 'บัญชีธนาคาร',               value: balances.bank_balance },
-          { label: 'เป็นลูกหนี้',               value: balances.total_receivables, sub: 'ค้างค่าลงทุน' },
-          { label: 'เป็นเจ้าหนี้',              value: balances.total_payables,    sub: 'เครดิตลูกค้า' },
-        ].map(({ label, value, sub }, i) => (
-          <div key={label} className={`metric-item${i > 0 ? ' bordered' : ''}`}>
+          { key: 'cash',        label: 'เงินสดหมุนเวียน',   value: balances.cash_balance },
+          { key: 'profit',      label: 'เงินกำไรสะสม',      value: balances.profit_balance },
+          { key: 'bank',        label: 'บัญชีธนาคาร',       value: balances.bank_balance },
+          { key: 'receivables', label: 'เป็นลูกหนี้',       value: balances.total_receivables, sub: 'ค้างค่าลงทุน' },
+          { key: 'payables',    label: 'เป็นเจ้าหนี้',      value: balances.total_payables,    sub: 'เครดิตลูกค้า' },
+        ].map(({ key, label, value, sub }, i) => (
+          <div key={label} className={`metric-item${i > 0 ? ' bordered' : ''}`}
+               onClick={() => openDetailModal(key)}
+               style={{ cursor: 'pointer', transition: 'background 0.15s', padding: '12px 24px', margin: '-12px 0', borderRadius: 8 }}
+               onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-deep)'}
+               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
             <div className="metric-label" style={{ fontSize: 14 }}>{label}</div>
             <div className="metric-value" style={{ fontSize: 28, color: value < 0 ? 'var(--rust)' : 'var(--ink)' }}>
               ฿{fmt(value)}
@@ -384,7 +785,8 @@ export default function Accounting() {
               ) : transactions.map(tx => {
                 const auto   = AUTO_SOURCES.includes(tx.source);
                 const amount = parseFloat(tx.amount);
-                const isIn   = amount >= 0;
+                const isExpenseType = ['fuel_investment', 'water_investment'].includes(tx.transaction_type);
+                const isIn   = isExpenseType ? false : (amount >= 0);
                 const label  = TX_LABEL[tx.transaction_type] || tx.transaction_type;
                 const desc   = tx.description && cleanDesc(tx.description) !== label ? cleanDesc(tx.description) : null;
                 return (
@@ -399,10 +801,10 @@ export default function Accounting() {
                     <td style={{ fontSize: 13, color: 'var(--ink-3)' }}>
                       {ACCOUNT_LABEL[tx.account_type] || tx.account_type || '—'}
                     </td>
-                    <td className="r mono" style={{ color: '#27ae60', fontWeight: 600 }}>
+                    <td className="r tnum" style={{ color: '#27ae60', fontWeight: 500 }}>
                       {isIn && amount !== 0 ? `฿${fmt(amount)}` : <span style={{ color: 'var(--ink-4)' }}>—</span>}
                     </td>
-                    <td className="r mono" style={{ color: 'var(--rust)', fontWeight: 600 }}>
+                    <td className="r tnum" style={{ color: 'var(--rust)', fontWeight: 500 }}>
                       {!isIn ? `฿${fmt(Math.abs(amount))}` : <span style={{ color: 'var(--ink-4)' }}>—</span>}
                     </td>
                     <td style={{ textAlign: 'right' }}>

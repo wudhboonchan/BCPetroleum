@@ -7,6 +7,60 @@ const { authMiddleware } = require('../middleware/auth');
 // Apply auth middleware to all accounting routes
 router.use(authMiddleware);
 
+// Helper to fetch all account transactions bypassing PostgREST 1000-row limit
+async function getAllAccountTransactions(date) {
+    let allData = [];
+    let from = 0;
+    const limit = 1000;
+    
+    while (true) {
+        const { data, error } = await supabase
+            .from('account_transactions')
+            .select('account_type, amount')
+            .lte('date', date)
+            .range(from, from + limit - 1);
+            
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        
+        allData.push(...data);
+        if (data.length < limit) break;
+        from += limit;
+    }
+    
+    return allData;
+}
+
+// Helper to fetch all account detail transactions bypassing PostgREST 1000-row limit
+async function getAllAccountDetails(account, date) {
+    let allData = [];
+    let from = 0;
+    const limit = 1000;
+    
+    while (true) {
+        const { data, error } = await supabase
+            .from('account_transactions')
+            .select(`
+                *,
+                customer:customers(name, code)
+            `)
+            .eq('account_type', account)
+            .lte('date', date)
+            .order('date', { ascending: true })
+            .order('created_at', { ascending: true })
+            .range(from, from + limit - 1);
+            
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        
+        allData.push(...data);
+        if (data.length < limit) break;
+        from += limit;
+    }
+    
+    return allData;
+}
+
 // ============================================================================
 // TRANSACTIONS
 // ============================================================================
@@ -166,7 +220,7 @@ router.post('/fuel-investment', async (req, res) => {
 
         // Create account transaction entry for unpaid amount (increases receivables)
         if (remaining_amount > 0) {
-            const descriptionParts = [`ลงทุนน้ำมัน ${fuel_type.toUpperCase()} ${liters} ลิตร @ ฿${cost_per_liter}/ลิตร`];
+            const descriptionParts = [`ลงทุนน้ำมัน ${fuel_type.toUpperCase()} ${liters} ลิตร @ ฿${Number(cost_per_liter).toFixed(2)}/ลิตร`];
             if (note) descriptionParts.push(`(${note})`);
 
             await supabase
@@ -616,7 +670,7 @@ router.get('/summary/:date', async (req, res) => {
         // Execute all queries in parallel
         const [
             transListRes,
-            balanceTransRes,
+            balanceTrans,
             fuelInvRes,
             waterInvRes,
             loanRes,
@@ -629,11 +683,8 @@ router.get('/summary/:date', async (req, res) => {
                 .eq('date', date)
                 .order('created_at', { ascending: false }),
 
-            // 2. Transactions for Balance Calc (Cumulative <= date)
-            supabase
-                .from('account_transactions')
-                .select('account_type, amount')
-                .lte('date', date),
+            // 2. Transactions for Balance Calc (Cumulative <= date) - paginated
+            getAllAccountTransactions(date),
 
             // 3. Fuel Investments for Receivables (unpaid/partial <= date)
             supabase
@@ -672,7 +723,7 @@ router.get('/summary/:date', async (req, res) => {
         let profit_balance = 0;
         let bank_balance = 0;
 
-        (balanceTransRes.data || []).forEach(t => {
+        (balanceTrans || []).forEach(t => {
             const amount = parseFloat(t.amount);
             if (t.account_type === 'cash') cash_balance += amount;
             else if (t.account_type === 'profit') profit_balance += amount;
@@ -709,12 +760,7 @@ router.get('/balances/:date', async (req, res) => {
         const { date } = req.params;
 
         // Calculate CUMULATIVE balances from all transactions up to this date
-        const { data: transactions, error: transError } = await supabase
-            .from('account_transactions')
-            .select('account_type, amount')
-            .lte('date', date);
-
-        if (transError) throw transError;
+        const transactions = await getAllAccountTransactions(date);
 
         // Calculate loan receivables (cumulative unpaid amounts)
         const { data: loanData, error: loanError } = await supabase
@@ -906,20 +952,7 @@ router.get('/account-details/:account/:date', async (req, res) => {
     try {
         const { account, date } = req.params;
 
-        const { data, error } = await supabase
-            .from('account_transactions')
-            .select(`
-                *,
-                customer:customers(name, code)
-            `)
-            .eq('account_type', account)
-            .lte('date', date)
-            .order('date', { ascending: true })
-            .order('created_at', { ascending: true });
-
-        if (error) throw error;
-
-        let transactions = data || [];
+        const transactions = await getAllAccountDetails(account, date);
 
         // For bank account, sort to put credits (deposits) before debits (withdrawals) on same date
         // This prevents negative balance display
