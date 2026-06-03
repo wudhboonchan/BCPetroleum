@@ -201,7 +201,6 @@ body {
 
 /* ─── page layout ── */
 .main-container {
-  max-width: 1440px;
   padding: 24px var(--pad-page-x) var(--pad-page-y);
   flex: 1;
 }
