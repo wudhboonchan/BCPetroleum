@@ -40,7 +40,6 @@ export default function TopBar() {
   return (
     <>
       <header className="top-bar">
-        <div className="top-bar-inner">
         <NavLink to="/" className="top-bar-brand">
           <div className="brand-mark" />
           <span>BC Petroleum</span>
@@ -77,7 +76,6 @@ export default function TopBar() {
               </button>
             </div>
           </div>
-        </div>
         </div>
       </header>
 

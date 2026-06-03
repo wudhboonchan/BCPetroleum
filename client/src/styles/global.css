@@ -86,12 +86,6 @@ body {
 /* ─── top bar ── */
 .top-bar {
   position: sticky; top: 0; z-index: 50;
-  background: color-mix(in oklch, var(--bg) 88%, transparent);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border-bottom: 1px solid var(--line-soft);
-}
-.top-bar-inner {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -99,6 +93,10 @@ body {
   max-width: 1440px;
   margin: 0 auto;
   padding: 16px var(--pad-page-x);
+  background: color-mix(in oklch, var(--bg) 88%, transparent);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .top-bar-brand {
@@ -835,7 +833,7 @@ select.form-input {
 /* ─── responsive ── */
 @media (max-width: 1024px) {
   :root { --pad-page-x: 32px; --pad-page-y: 40px; }
-  .top-bar-inner { padding: 12px var(--pad-page-x); }
+  .top-bar { padding: 12px var(--pad-page-x); }
   .hero-section { grid-template-columns: 1fr; gap: 48px; }
   .charts-grid { grid-template-columns: 1fr; }
   .metrics-strip { grid-template-columns: repeat(2, 1fr); gap: 32px; }
@@ -845,7 +843,7 @@ select.form-input {
 
 @media (max-width: 720px) {
   :root { --pad-page-x: 20px; }
-  .top-bar-inner { grid-template-columns: auto auto auto; padding: 10px var(--pad-page-x); }
+  .top-bar { grid-template-columns: auto auto auto; padding: 10px var(--pad-page-x); }
   .top-bar-nav { display: none; }
   .top-bar-nav.mobile-open { display: flex; flex-direction: column; position: fixed; top: 60px; left: 0; right: 0; background: var(--surface); border-bottom: 1px solid var(--line-soft); padding: 12px 20px; z-index: 49; }
   .hero-value { font-size: 48px; }
