@@ -51,6 +51,12 @@ const TX_LABEL = {
   other:            'รายการอื่นๆ',
 };
 
+function getTransactionLabel(type) {
+  if (!type) return '';
+  const key = String(type).trim();
+  return TX_LABEL[key] || key;
+}
+
 // SVG Icons สำหรับปุ่มเพิ่มรายการ
 const ICONS = {
   fuel_investment: (
@@ -178,6 +184,7 @@ export default function Accounting() {
   const [customers, setCustomers] = useState([]);
   const [deleteModal, setDeleteModal] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [debtItems, setDebtItems] = useState([]);
   const [detailModal, setDetailModal] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailData, setDetailData] = useState([]);
@@ -202,6 +209,34 @@ export default function Accounting() {
 
   useEffect(() => { load(); }, [selectedDate]);
 
+  const loadDebtItems = async (debtType) => {
+    if (!debtType) { setDebtItems([]); return; }
+    try {
+      if (debtType === 'fuel') {
+        const r = await api.get(`/api/accounting/fuel-investments/${selectedDate}?status=unpaid`);
+        setDebtItems((r.investments || []).filter(i => i.payment_status !== 'paid').map(i => ({
+          id: i.id,
+          label: `น้ำมัน ${i.fuel_type.toUpperCase()} ${i.liters} ลิตร — คงเหลือ ฿${Number(i.remaining_amount).toLocaleString()}`,
+          remaining_amount: i.remaining_amount,
+        })));
+      } else if (debtType === 'water') {
+        const r = await api.get(`/api/accounting/water-investments/${selectedDate}?status=unpaid`);
+        setDebtItems((r.investments || []).filter(i => i.payment_status !== 'paid').map(i => ({
+          id: i.id,
+          label: `น้ำดื่มสมนาคุณ ${i.packs} แพ็ค — คงเหลือ ฿${Number(i.remaining_amount).toLocaleString()}`,
+          remaining_amount: i.remaining_amount,
+        })));
+      } else if (debtType === 'loan') {
+        const r = await api.get(`/api/accounting/loans/${selectedDate}?status=unpaid`);
+        setDebtItems((r.loans || []).filter(l => l.payment_status !== 'paid').map(l => ({
+          id: l.id,
+          label: `${l.description} — คงเหลือ ฿${Number(l.remaining_amount).toLocaleString()}`,
+          remaining_amount: l.remaining_amount,
+        })));
+      }
+    } catch { setDebtItems([]); }
+  };
+
   const openModal = (type) => {
     setForm({
       amount: '',
@@ -212,8 +247,18 @@ export default function Accounting() {
       liters: '',
       totalCost: '',
       paymentStatus: 'unpaid',
-      paymentMethod: 'cash'
+      paymentMethod: 'cash',
+      otherType: 'income',
+      account: 'cash',
+      loanAccount: 'cash',
+      elecMonth: new Date().toLocaleString('th-TH', { month: 'long' }),
+      waterPacks: '',
+      waterCostPerPack: '60',
+      debtType: '',
+      debtId: '',
+      paymentAccount: 'cash',
     });
+    setDebtItems([]);
     setModal(type);
   };
 
@@ -273,19 +318,101 @@ export default function Accounting() {
       return;
     }
 
+    if (modal === 'electricity') {
+      if (!form.amount || parseFloat(form.amount) <= 0) return toast.error('กรุณากรอกจำนวนเงิน');
+      setSaving(true);
+      try {
+        await api.post('/api/accounting/transaction', {
+          date: selectedDate,
+          transaction_type: 'electricity',
+          category: 'Utilities',
+          description: `ค่าไฟฟ้า (${form.elecMonth})`,
+          amount: -parseFloat(form.amount),
+          payment_method: 'cash',
+          account_type: 'cash',
+        });
+        toast.success('บันทึกค่าไฟฟ้าสำเร็จ');
+        setModal(null); load();
+      } catch (err) { toast.error(err.message || 'เกิดข้อผิดพลาด'); }
+      finally { setSaving(false); }
+      return;
+    }
+
+    if (modal === 'water_purchase') {
+      if (!form.waterPacks || parseInt(form.waterPacks) <= 0) return toast.error('กรุณากรอกจำนวนแพค');
+      if (!form.waterCostPerPack || parseFloat(form.waterCostPerPack) <= 0) return toast.error('กรุณากรอกราคาต่อแพค');
+      setSaving(true);
+      try {
+        await api.post('/api/accounting/water-investment', {
+          date: selectedDate,
+          packs: parseInt(form.waterPacks),
+          cost_per_pack: parseFloat(form.waterCostPerPack) || 60,
+          note: form.note || '',
+        });
+        toast.success('บันทึกน้ำดื่มสมนาคุณสำเร็จ');
+        setModal(null); load();
+      } catch (err) { toast.error(err.message || 'เกิดข้อผิดพลาด'); }
+      finally { setSaving(false); }
+      return;
+    }
+
+    if (modal === 'debt_payment') {
+      if (!form.debtType) return toast.error('กรุณาเลือกประเภทหนี้');
+      if (!form.debtId) return toast.error('กรุณาเลือกรายการหนี้');
+      if (!form.amount || parseFloat(form.amount) <= 0) return toast.error('กรุณากรอกจำนวนเงิน');
+      const selected = debtItems.find(i => String(i.id) === String(form.debtId));
+      if (selected && parseFloat(form.amount) > selected.remaining_amount) {
+        return toast.error(`จำนวนเงินเกินยอดค้างชำระ (฿${selected.remaining_amount.toLocaleString()})`);
+      }
+      setSaving(true);
+      try {
+        await api.post('/api/accounting/pay-debt', {
+          date: selectedDate,
+          debt_type: form.debtType,
+          debt_id: form.debtId,
+          payment_amount: parseFloat(form.amount),
+          payment_account: form.paymentAccount,
+          note: form.note || '',
+        });
+        toast.success('บันทึกการชำระหนี้สำเร็จ');
+        setModal(null); load();
+      } catch (err) { toast.error(err.message || 'เกิดข้อผิดพลาด'); }
+      finally { setSaving(false); }
+      return;
+    }
+
     if (!form.amount || isNaN(parseFloat(form.amount))) return toast.error('กรอกจำนวนเงินให้ถูกต้อง');
     setSaving(true);
     try {
       const amount = parseFloat(form.amount);
+
+      if (modal === 'other' && form.otherType === 'loan') {
+        await api.post('/api/accounting/loan', {
+          date: selectedDate,
+          description: form.note || 'เงินกู้ยืมชั่วคราว',
+          amount,
+          account_type: form.loanAccount,
+          note: form.note || '',
+        });
+        toast.success('บันทึกสำเร็จ');
+        setModal(null);
+        load();
+        return;
+      }
+
       let account_type = 'cash';
       if (modal === 'bank_deposit') account_type = 'bank';
+      if (modal === 'other') account_type = form.account;
+
+      let transaction_type = modal;
+      if (modal === 'other') transaction_type = form.otherType === 'income' ? 'other_income' : 'other_expense';
 
       await api.post('/api/accounting/transaction', {
         date: selectedDate,
-        transaction_type: modal,
-        category: TX_LABEL[modal] || modal,
-        description: form.note || TX_LABEL[modal],
-        amount: modal === 'other' && form.direction === 'out' ? -amount : amount,
+        transaction_type,
+        category: TX_LABEL[transaction_type] || transaction_type,
+        description: form.note || TX_LABEL[transaction_type],
+        amount: modal === 'other' && form.otherType === 'expense' ? -amount : amount,
         account_type,
         customer_id: form.customerId || null,
       });
@@ -339,17 +466,37 @@ export default function Accounting() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
               {modal === 'other' && (
-                <div className="form-group">
-                  <label className="form-label">ประเภท</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {[{ v: 'out', l: 'รายจ่าย' }, { v: 'in', l: 'รายรับ' }].map(({ v, l }) => (
-                      <button key={v} type="button"
-                        onClick={() => setForm(f => ({ ...f, direction: v }))}
-                        className={form.direction === v ? 'btn btn-primary' : 'btn'}
-                        style={{ flex: 1 }}>{l}</button>
-                    ))}
+                <>
+                  <div className="form-group">
+                    <label className="form-label">ประเภท</label>
+                    <select className="form-input" value={form.otherType}
+                      onChange={e => setForm(f => ({ ...f, otherType: e.target.value }))}>
+                      <option value="income">รายรับอื่นๆ</option>
+                      <option value="expense">รายจ่ายอื่นๆ</option>
+                      <option value="loan">เงินกู้ยืมชั่วคราว</option>
+                    </select>
                   </div>
-                </div>
+                  {form.otherType !== 'loan' ? (
+                    <div className="form-group">
+                      <label className="form-label">บัญชีที่เกี่ยวข้อง</label>
+                      <select className="form-input" value={form.account}
+                        onChange={e => setForm(f => ({ ...f, account: e.target.value }))}>
+                        <option value="cash">เงินสดหมุนเวียน</option>
+                        <option value="profit">เงินกำไร</option>
+                        <option value="bank">บัญชีธนาคาร</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="form-group">
+                      <label className="form-label">เงินเข้าบัญชี</label>
+                      <select className="form-input" value={form.loanAccount}
+                        onChange={e => setForm(f => ({ ...f, loanAccount: e.target.value }))}>
+                        <option value="cash">เงินสดหมุนเวียน</option>
+                        <option value="bank">บัญชีธนาคาร</option>
+                      </select>
+                    </div>
+                  )}
+                </>
               )}
 
               {modal === 'fuel_investment' ? (
@@ -400,6 +547,90 @@ export default function Accounting() {
                     </div>
                   )}
                 </>
+              ) : modal === 'electricity' ? (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">ประจำเดือน</label>
+                    <select className="form-input" value={form.elecMonth}
+                      onChange={e => setForm(f => ({ ...f, elecMonth: e.target.value }))}>
+                      {['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'].map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">จำนวนเงิน (บาท)</label>
+                    <input type="number" step="0.01" min="0" className="form-input" autoFocus
+                      placeholder="0.00" value={form.amount}
+                      onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && save()} />
+                  </div>
+                </>
+              ) : modal === 'water_purchase' ? (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">จำนวนแพค</label>
+                    <input type="number" min="0" className="form-input" autoFocus
+                      placeholder="0" value={form.waterPacks}
+                      onChange={e => setForm(f => ({ ...f, waterPacks: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && save()} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">ราคาต่อแพค (บาท)</label>
+                    <input type="number" step="0.01" min="0" className="form-input"
+                      placeholder="60.00" value={form.waterCostPerPack}
+                      onChange={e => setForm(f => ({ ...f, waterCostPerPack: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && save()} />
+                  </div>
+                </>
+              ) : modal === 'debt_payment' ? (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">ประเภทหนี้</label>
+                    <select className="form-input" value={form.debtType}
+                      onChange={e => {
+                        setForm(f => ({ ...f, debtType: e.target.value, debtId: '' }));
+                        loadDebtItems(e.target.value);
+                      }}>
+                      <option value="">-- เลือกประเภทหนี้ --</option>
+                      <option value="fuel">ค่าน้ำมัน</option>
+                      <option value="water">ค่าน้ำดื่ม</option>
+                      <option value="loan">เงินกู้ยืม</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">เลือกรายการหนี้</label>
+                    <select className="form-input" value={form.debtId}
+                      onChange={e => {
+                        const item = debtItems.find(i => String(i.id) === e.target.value);
+                        setForm(f => ({ ...f, debtId: e.target.value, amount: item ? String(item.remaining_amount) : f.amount }));
+                      }}>
+                      <option value="">-- เลือกรายการ --</option>
+                      {debtItems.map(i => <option key={i.id} value={i.id}>{i.label}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">จำนวนเงิน (บาท)</label>
+                    <input type="number" step="0.01" min="0" className="form-input"
+                      placeholder="0.00" value={form.amount}
+                      onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && save()} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">ชำระจากบัญชี</label>
+                    <select className="form-input" value={form.paymentAccount}
+                      onChange={e => setForm(f => ({ ...f, paymentAccount: e.target.value }))}>
+                      <option value="cash">เงินสด</option>
+                      <option value="bank">ธนาคาร</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">หมายเหตุ (ถ้ามี)</label>
+                    <input className="form-input" placeholder="ระบุรายละเอียดเพิ่มเติม"
+                      value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && save()} />
+                  </div>
+                </>
               ) : (
                 <>
                   <div className="form-group">
@@ -409,16 +640,6 @@ export default function Accounting() {
                       onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
                       onKeyDown={e => e.key === 'Enter' && save()} />
                   </div>
-                  {modal === 'debt_payment' && (
-                    <div className="form-group">
-                      <label className="form-label">ลูกค้า / เจ้าหนี้</label>
-                      <select className="form-input" value={form.customerId}
-                        onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))}>
-                        <option value="">เลือก (ไม่บังคับ)</option>
-                        {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
-                    </div>
-                  )}
                   <div className="form-group">
                     <label className="form-label">หมายเหตุ</label>
                     <input className="form-input" placeholder="รายละเอียดเพิ่มเติม..."
@@ -447,7 +668,7 @@ export default function Accounting() {
             ) : (
               <div className="modal-footer">
                 <button className="btn" onClick={() => setModal(null)}>ยกเลิก</button>
-                <button className="btn btn-primary" onClick={save} disabled={!form.amount || saving}>
+                <button className="btn btn-primary" onClick={save} disabled={saving || (modal === 'water_purchase' ? (!form.waterPacks || !form.waterCostPerPack) : !form.amount)}>
                   {saving ? 'กำลังบันทึก…' : 'บันทึก'}
                 </button>
               </div>
@@ -789,7 +1010,7 @@ export default function Accounting() {
                 const amount = parseFloat(tx.amount);
                 const isExpenseType = ['fuel_investment', 'water_investment'].includes(tx.transaction_type);
                 const isIn   = isExpenseType ? false : (amount >= 0);
-                const label  = TX_LABEL[tx.transaction_type] || tx.transaction_type;
+                const label  = getTransactionLabel(tx.transaction_type);
                 const desc   = tx.description && cleanDesc(tx.description) !== label ? cleanDesc(tx.description) : null;
                 return (
                   <tr key={tx.id}>

@@ -1057,6 +1057,8 @@ router.post('/pay-debt', async (req, res) => {
             descParts = [`ชำระเงินกู้ยืม: ${debt.description}`];
         }
         if (note) descParts.push(`(${note})`);
+        // ฝัง debt_id ไว้เพื่อใช้ตอน restore เมื่อลบรายการ
+        descParts.push(`[ref:${debt_type}:${debt_id}]`);
 
         await supabase
             .from('account_transactions')
@@ -1078,7 +1080,7 @@ router.post('/pay-debt', async (req, res) => {
                 date,
                 transaction_type: 'debt_payment',
                 category: debt_type === 'fuel' ? 'Fuel Payment' : (debt_type === 'water' ? 'Water Payment' : 'Loan Payment'),
-                description: `ลดหนี้: ${descParts[0]}`,
+                description: `ลดหนี้: ${descParts.join(' ')}`,
                 amount: -amount, // Negative to decrease payables/receivables
                 payment_method: null,
                 account_type: account_type_debt,
@@ -1291,53 +1293,49 @@ router.delete('/transactions/:id', async (req, res) => {
             }
 
             // Restore investment amount
+            // Search for [ref:] tag in the deleted transaction OR any of its paired transactions
             const amount = Math.abs(transaction.amount);
-            const isFuel = transaction.category === 'Fuel Payment';
-            const isWater = transaction.category === 'Water Payment';
-            const isLoan = transaction.category === 'Loan Payment';
-            const table = isFuel ? 'fuel_investments' : (isWater ? 'water_investments' : 'loans');
+            const allDescs = [transaction, ...relatedTransactions].map(t => t.description || '');
+            const refMatch = allDescs.reduce((found, desc) => found || desc.match(/\[ref:(\w+):(\d+)\]/), null);
 
-            // Find the investment to restore
-            let investmentQuery = supabase
-                .from(table)
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (isLoan) {
-                // For loans, match by description content
-                investmentQuery = investmentQuery.in('payment_status', ['partial', 'paid']);
-            } else {
-                investmentQuery = investmentQuery.eq('date', transaction.date);
-            }
-
-            const { data: investments } = await investmentQuery.limit(5);
-
-            if (investments && investments.length > 0) {
-                // Find the best match - look for one where paid_amount makes sense
-                const investment = investments[0];
-                const totalField = isLoan ? 'amount' : 'total_cost';
-                const newPaidAmount = Math.max(0, parseFloat(investment.paid_amount || 0) - amount);
-                const newRemainingAmount = parseFloat(investment[totalField]) - newPaidAmount;
-                const newStatus = newPaidAmount === 0 ? 'unpaid' :
-                    newRemainingAmount === 0 ? 'paid' : 'partial';
-
+            const doRestore = async (table, investmentId, totalField, debtType) => {
+                const { data: inv } = await supabase.from(table).select('*').eq('id', investmentId).single();
+                if (!inv) return;
+                const newPaid = Math.max(0, parseFloat(inv.paid_amount || 0) - amount);
+                const newRemaining = parseFloat(inv[totalField]) - newPaid;
+                const newStatus = newPaid === 0 ? 'unpaid' : newRemaining === 0 ? 'paid' : 'partial';
                 const { data: restored, error: restoreError } = await supabase
                     .from(table)
-                    .update({
-                        paid_amount: newPaidAmount,
-                        remaining_amount: newRemainingAmount,
-                        payment_status: newStatus,
-                        updated_at: new Date()
-                    })
-                    .eq('id', investment.id)
+                    .update({ paid_amount: newPaid, remaining_amount: newRemaining, payment_status: newStatus, updated_at: new Date() })
+                    .eq('id', investmentId)
                     .select()
                     .single();
+                if (!restoreError && restored) restoredInvestments.push({ type: debtType, ...restored });
+            };
 
-                if (!restoreError && restored) {
-                    restoredInvestments.push({
-                        type: isFuel ? 'fuel' : (isWater ? 'water' : 'loan'),
-                        ...restored
-                    });
+            if (refMatch) {
+                const [, debtType, debtId] = refMatch;
+                const table = debtType === 'fuel' ? 'fuel_investments' : (debtType === 'water' ? 'water_investments' : 'loans');
+                const totalField = debtType === 'loan' ? 'amount' : 'total_cost';
+                await doRestore(table, parseInt(debtId), totalField, debtType);
+            } else {
+                // Fallback for transactions without [ref:] tag
+                // Find the most recently paid investment matching the category
+                const isFuel = transaction.category === 'Fuel Payment';
+                const isWater = transaction.category === 'Water Payment';
+                const fallbackTable = isFuel ? 'fuel_investments' : (isWater ? 'water_investments' : 'loans');
+                const totalField = fallbackTable === 'loans' ? 'amount' : 'total_cost';
+                const fallbackType = isFuel ? 'fuel' : (isWater ? 'water' : 'loan');
+
+                const { data: investments } = await supabase
+                    .from(fallbackTable)
+                    .select('*')
+                    .in('payment_status', ['partial', 'paid'])
+                    .order('updated_at', { ascending: false })
+                    .limit(1);
+
+                if (investments && investments.length > 0) {
+                    await doRestore(fallbackTable, investments[0].id, totalField, fallbackType);
                 }
             }
         } else if (transaction.transaction_type === 'profit_transfer' || transaction.transaction_type === 'deposit_to_bank') {

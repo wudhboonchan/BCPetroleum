@@ -1,4 +1,5 @@
 import Footer from '../components/Footer.jsx';
+import { IconWarning } from '../components/Icons.jsx';
 import DatePicker from '../components/DatePicker.jsx';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api.js';
@@ -231,7 +232,7 @@ export default function Cash() {
           {/* แจ้งเตือนถ้าไม่มีราคา */}
           {Object.values(prices).every(v => !v) && !loading && (
             <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)', color: '#c0392b', fontSize: 13 }}>
-              ⚠️ ยังไม่มีข้อมูลราคาน้ำมันสำหรับวันนี้ — กรุณากรอกราคาในหน้า <strong>รายวัน</strong> ก่อนใช้ฟังก์ชันนี้
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><IconWarning style={{ width: 14, height: 14, flexShrink: 0 }} />ยังไม่มีข้อมูลราคาน้ำมันสำหรับวันนี้ — กรุณากรอกราคาในหน้า <strong>รายวัน</strong> ก่อนใช้ฟังก์ชันนี้</span>
             </div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24, marginBottom: 20 }}>
@@ -556,7 +557,7 @@ export default function Cash() {
               return (
                 <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.3)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#c0392b' }}>⚠ เงินเกินกว่าวานนี้</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#c0392b', display: 'flex', alignItems: 'center', gap: 4 }}><IconWarning style={{ width: 13, height: 13 }} />เงินเกินกว่าวานนี้</span>
                     <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: '#c0392b' }}>+฿{fmt(diff)}</span>
                   </div>
                   <div style={{ fontSize: 11, color: '#c0392b' }}>ยอดเปิดเซฟสูงกว่ายอดปิดเมื่อวาน — กรุณาตรวจสอบอีกครั้ง</div>

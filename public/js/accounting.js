@@ -311,7 +311,8 @@ function getTransactionTypeLabel(type) {
         'other_income': '📈 รายรับอื่นๆ',
         'other_expense': '📉 รายจ่ายอื่นๆ'
     };
-    return labels[type] || type;
+    const key = String(type || '').trim();
+    return labels[key] || key;
 }
 
 // Get account type label

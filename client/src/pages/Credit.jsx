@@ -1,4 +1,5 @@
 import Footer from '../components/Footer.jsx';
+import { IconSearch, IconDocument } from '../components/Icons.jsx';
 import DatePicker from '../components/DatePicker.jsx';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../lib/api.js';
@@ -517,7 +518,7 @@ export default function Credit() {
 
         {/* action bar */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" onClick={search}>🔍 ค้นหา</button>
+          <button className="btn btn-primary" onClick={search} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><IconSearch />ค้นหา</button>
           <button className="btn" onClick={() => { setFStart(''); setFEnd(''); setFCustomer('all'); setFInvStatus('all'); setAllData({ data: [], summary: {} }); setSearched(false); clearSelection(); }}>
             ↺ ล้างตัวกรอง
           </button>
@@ -536,7 +537,7 @@ export default function Credit() {
           <div style={{ flex: 1 }} />
           {selected.size > 0 && (
             <button className="btn btn-primary" onClick={createInvoice} disabled={invoiceCreating}>
-              {invoiceCreating ? 'กำลังสร้าง…' : `📋 สร้างใบวางบิล (${selected.size} รายการ · ฿${fmt(selectedTotal)})`}
+              {invoiceCreating ? 'กำลังสร้าง…' : <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><IconDocument />สร้างใบวางบิล ({selected.size} รายการ · ฿{fmt(selectedTotal)})</span>}
             </button>
           )}
         </div>

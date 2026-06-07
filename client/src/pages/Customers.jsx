@@ -1,4 +1,5 @@
 import Footer from '../components/Footer.jsx';
+import { IconChat, IconHistory, IconTransfer, IconCash, IconPrint, IconSend } from '../components/Icons.jsx';
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api.js';
 import { useToast } from '../components/Toast.jsx';
@@ -231,7 +232,7 @@ export default function Customers() {
             { key: 'contact_person', label: 'ผู้ติดต่อ' },
             { key: 'address', label: 'ที่อยู่' },
             { key: 'note', label: 'หมายเหตุ' },
-            { key: 'line_user_id', label: '💬 LINE User ID' },
+            { key: 'line_user_id', label: <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><IconChat />LINE User ID</span> },
           ].map(({ key, label, required }) => (
             <div className="form-group" key={key}>
               <label className="form-label">{label}</label>
@@ -262,7 +263,7 @@ export default function Customers() {
     return (
       <div className="modal-backdrop" onClick={() => setHistoryModal(null)}>
         <div className="modal-box" style={{ maxWidth: 760, width: '95vw' }} onClick={e => e.stopPropagation()}>
-          <div className="modal-title">📋 ประวัติ — {c.name}</div>
+          <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconHistory />ประวัติ — {c.name}</div>
           {historyLoading ? (
             <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--ink-3)' }}>กำลังโหลด…</div>
           ) : (
@@ -448,11 +449,11 @@ export default function Customers() {
                       <div style={{ display: 'flex', gap: 16 }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
                           <input type="radio" name="pay-method" value="transfer" checked={payMethod === 'transfer'} onChange={() => setPayMethod('transfer')} />
-                          เงินโอน 📲
+                          <IconTransfer style={{ width: 14, height: 14 }} /> เงินโอน
                         </label>
                         <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
                           <input type="radio" name="pay-method" value="cash" checked={payMethod === 'cash'} onChange={() => setPayMethod('cash')} />
-                          เงินสด 💵
+                          <IconCash style={{ width: 14, height: 14 }} /> เงินสด
                         </label>
                       </div>
                     </div>
@@ -472,7 +473,7 @@ export default function Customers() {
           <div className="modal-footer" style={{ marginTop: 20 }}>
             <button className="btn" onClick={() => { setInvDetailModal(null); setPayModal(false); }}>ปิด</button>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn" onClick={handlePrint} style={{ borderColor: '#2563af', color: '#2563af' }}>🖨 พิมพ์ใบวางบิล</button>
+              <button className="btn" onClick={handlePrint} style={{ borderColor: '#2563af', color: '#2563af', display: 'flex', alignItems: 'center', gap: 6 }}><IconPrint />พิมพ์ใบวางบิล</button>
               <button
                 className="btn"
                 onClick={() => sendLineInvoice(inv.id)}
@@ -480,7 +481,7 @@ export default function Customers() {
                 style={{ borderColor: '#06c755', color: '#06c755' }}
                 title={inv.customers?.line_user_id ? 'ส่งใบวางบิลทาง LINE' : 'ยังไม่มี LINE User ID'}
               >
-                {lineSending ? '⏳ กำลังส่ง…' : '💬 ส่งทาง LINE'}
+                {lineSending ? 'กำลังส่ง…' : <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><IconSend />ส่งทาง LINE</span>}
               </button>
               {!isPaid && (
                 <>

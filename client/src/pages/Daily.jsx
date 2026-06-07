@@ -1,4 +1,5 @@
 import Footer from '../components/Footer.jsx';
+import { IconWarning } from '../components/Icons.jsx';
 import DatePicker from '../components/DatePicker.jsx';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api.js';
@@ -281,7 +282,7 @@ export default function Daily() {
 
       {warnModal && (
         <Modal
-          title="⚠️ ค่ามิเตอร์ผิดปกติ"
+          title={<span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconWarning style={{ color: 'var(--rust)' }} />ค่ามิเตอร์ผิดปกติ</span>}
           message="มีหัวจ่ายที่กรอกค่าวันนี้เท่ากับหรือน้อยกว่าเมื่อวาน (ไฮไลท์สีแดง) ซึ่งอาจเกิดจากการกรอกผิด ต้องการบันทึกต่อหรือไม่?"
           onConfirm={() => { setWarnModal(false); doSubmit(); }}
           onCancel={() => setWarnModal(false)}
