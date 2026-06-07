@@ -46,6 +46,8 @@ const TX_LABEL = {
   loan:             'ชำระหนี้',
   loan_received:    'รับเงินกู้',
   expense:          'รายจ่าย',
+  other_income:     'รายรับอื่นๆ',
+  other_expense:    'รายจ่ายอื่นๆ',
   other:            'รายการอื่นๆ',
 };
 
