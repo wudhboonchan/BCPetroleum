@@ -24,7 +24,7 @@ function formatDisplay(str) {
   return `${d}/${m}/${y}`;
 }
 
-export default function DatePicker({ value, onChange, placeholder = 'วว/ดด/ปปปป', required, style, className }) {
+export default function DatePicker({ value, onChange, placeholder = 'วว/ดด/ปปปป', required, style, className, align = 'left' }) {
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState(() => {
     const d = parseDate(value);
@@ -115,7 +115,10 @@ export default function DatePicker({ value, onChange, placeholder = 'วว/ด�
       {/* Calendar dropdown */}
       {open && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 999,
+          position: 'absolute', top: 'calc(100% + 6px)',
+          left: align === 'left' ? 0 : 'auto',
+          right: align === 'right' ? 0 : 'auto',
+          zIndex: 999,
           background: 'var(--surface)', border: '1px solid var(--line-soft)',
           borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
           padding: '16px', minWidth: 280, userSelect: 'none',

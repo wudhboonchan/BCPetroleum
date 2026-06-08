@@ -222,7 +222,7 @@ export default function Cash() {
           <div className="page-eyebrow">เงินสด · Cash</div>
           <h1 className="page-title">จัดการเงินสด · ปิดยอดรายวัน</h1>
         </div>
-        <DatePicker value={selectedDate} onChange={v => setSelectedDate(v)} />
+        <DatePicker value={selectedDate} onChange={v => setSelectedDate(v)} align="right" />
       </div>
 
       {/* ── STEP 1: เติมน้ำมันใช้เอง ── */}

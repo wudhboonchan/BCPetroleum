@@ -988,7 +988,7 @@ export default function Accounting() {
           <span className="card-title">รายการธุรกรรมประจำวัน</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <span style={{ fontSize: 13, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>วันที่</span>
-            <DatePicker value={selectedDate} onChange={v => setSelectedDate(v)} />
+            <DatePicker value={selectedDate} onChange={v => setSelectedDate(v)} align="right" />
           </div>
         </div>
         <div className="table-wrap">

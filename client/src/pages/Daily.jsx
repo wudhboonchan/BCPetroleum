@@ -325,7 +325,7 @@ export default function Daily() {
           <h1 className="page-title">บันทึกหัวจ่าย</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <DatePicker value={selectedDate} onChange={v => setSelectedDate(v)} />
+          <DatePicker value={selectedDate} onChange={v => setSelectedDate(v)} align="right" />
         </div>
       </div>
 
