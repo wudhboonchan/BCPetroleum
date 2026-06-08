@@ -21,19 +21,24 @@ router.get('/fuel', async (req, res) => {
             const resetAt = inv.reset_at || '1970-01-01';
             const resetDate = resetAt.slice(0, 10); // YYYY-MM-DD
 
-            // Purchases after reset_at
+            // นับเฉพาะวันถัดจาก reset (initial_liters = ยอด ณ ตอนนี้รวมวันนี้แล้ว)
+            const nextDay = new Date(resetDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+            const afterDate = nextDay.toISOString().slice(0, 10);
+
+            // Purchases after reset date
             const { data: purchases } = await supabase
                 .from('fuel_investments')
                 .select('liters')
                 .eq('fuel_type', ft)
-                .gte('date', resetDate);
+                .gte('date', afterDate);
 
-            // Sales after reset_at
+            // Sales after reset date
             const salesCol = ft === 'e91' ? 'e91_liters' : ft === 'e95' ? 'e95_liters' : 'b7_liters';
             const { data: sales } = await supabase
                 .from('daily_metrics')
                 .select(salesCol)
-                .gte('date', resetDate);
+                .gte('date', afterDate);
 
             const totalPurchases = (purchases || []).reduce((s, r) => s + Number(r.liters || 0), 0);
             const totalSales     = (sales     || []).reduce((s, r) => s + Number(r[salesCol] || 0), 0);
