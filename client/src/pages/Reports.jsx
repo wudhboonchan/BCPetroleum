@@ -11,22 +11,22 @@ import { fmt, THAI_MONTHS, FUEL_COLORS as FC, FUEL_NAMES } from '../lib/utils.js
 Chart.register(...registerables, ChartDataLabels);
 
 const TABS = [
-  { id: 'sales',      label: 'ยอดขาย & กำไร' },
-  { id: 'fuel',       label: 'วิเคราะห์น้ำมัน' },
-  { id: 'price',      label: 'ราคาน้ำมัน' },
-  { id: 'credit',     label: 'รายงานลูกหนี้' },
-  { id: 'invoice',    label: 'ใบวางบิล' },
+  { id: 'sales', label: 'ยอดขาย & กำไร' },
+  { id: 'fuel', label: 'วิเคราะห์น้ำมัน' },
+  { id: 'price', label: 'ราคาน้ำมัน' },
+  { id: 'credit', label: 'รายงานลูกหนี้' },
+  { id: 'invoice', label: 'ใบวางบิล' },
 ];
 
 const FUEL_OPTS = [
   { value: 'all', label: 'น้ำมันทุกชนิด' },
   { value: 'e91', label: 'แก๊สโซฮอล์ 91' },
   { value: 'e95', label: 'แก๊สโซฮอล์ 95' },
-  { value: 'b7',  label: 'ดีเซล B7' },
+  { value: 'b7', label: 'ดีเซล B7' },
 ];
 
 const FUEL_COLORS = {
-  b7:  'rgba(68, 98, 155, 0.88)',
+  b7: 'rgba(68, 98, 155, 0.88)',
   e91: 'rgba(174, 60, 48, 0.88)',
   e95: 'rgba(58, 120, 72, 0.88)',
 };
@@ -63,94 +63,170 @@ function MetricItem({ label, value, sub, bordered, accent, dotColor }) {
 function BarChart({ data, labels, datasets, yUnit = '฿', showLabels = true, stacked = false, xLabelSize = 10, xMaxRotation = 45, xAutoSkip = true }) {
   const ref = useRef(null);
   const chart = useRef(null);
+  const [fontsReady, setFontsReady] = useState(false);
+  const [fontTrigger, setFontTrigger] = useState(0);
 
   useEffect(() => {
-    if (!ref.current || !data?.length) return;
-    if (chart.current) chart.current.destroy();
+    if (!document.fonts) {
+      setFontsReady(true);
+      return;
+    }
 
-    const styledDatasets = datasets.map(ds => ({
-      borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
-      borderSkipped: false,
-      ...ds,
-    }));
+    let active = true;
+    const timeoutId = setTimeout(() => {
+      if (active) setFontsReady(true);
+    }, 400); // 400ms max wait for fonts
 
-    chart.current = new Chart(ref.current, {
-      type: 'bar',
-      data: { labels, datasets: styledDatasets },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: datasets.length > 1, position: 'top',
-            labels: { font: { size: 12 }, padding: 16, usePointStyle: true, pointStyle: 'rectRounded' },
-          },
-          datalabels: {
-            display: showLabels,
-            anchor: 'end',
-            align: 'end',
-            offset: 2,
-            formatter: v => v > 0 ? (yUnit + fmt(v)) : '',
-            font: { family: "'IBM Plex Mono', monospace", size: 10 },
-            color: '#666050',
-          },
-          tooltip: {
-            backgroundColor: '#faf9f5',
-            titleColor: '#2a2520',
-            bodyColor: '#7a7060',
-            borderColor: '#e8e4d8',
-            borderWidth: 1, padding: 10,
-            callbacks: {
-              label: ctx => `${ctx.dataset.label || ''}: ${yUnit}${fmt(ctx.parsed.y)}`,
-            },
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            stacked,
-            grid: { color: '#e8e4d8' },
-            ticks: {
-              font: { size: 11 },
-              color: '#9a9080',
-              padding: 8,
-              callback: v => {
-                if (!v) return yUnit + '0';
-                if (Math.abs(v) >= 1000000) return yUnit + (v / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-                if (Math.abs(v) >= 1000) return yUnit + (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-                return yUnit + v;
+    document.fonts.ready.then(() => {
+      if (active) {
+        clearTimeout(timeoutId);
+        setFontsReady(true);
+      }
+    });
+
+    return () => {
+      active = false;
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!fontsReady || !ref.current || !data?.length) return;
+
+    let chartInstance = null;
+
+    const initChart = () => {
+      if (!ref.current) return;
+
+      const styledDatasets = datasets.map(ds => ({
+        borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
+        borderSkipped: false,
+        ...ds,
+      }));
+
+      chartInstance = new Chart(ref.current, {
+        type: 'bar',
+        data: { labels, datasets: styledDatasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          clip: false,
+          plugins: {
+            legend: {
+              display: datasets.length > 1,
+              position: 'top',
+              labels: {
+                font: { family: "Bai Jamjuree, sans-serif", size: 12 },
+                padding: 16,
+                usePointStyle: true,
+                pointStyle: 'rectRounded'
               },
             },
-            afterFit(scale) { scale.width = Math.max(scale.width, 72); },
+            datalabels: {
+              display: showLabels,
+              anchor: 'end',
+              align: 'end',
+              offset: 2,
+              formatter: v => v > 0 ? (yUnit + fmt(v)) : '',
+              font: { family: "ui-monospace, monospace", size: 10 },
+              color: '#666050',
+            },
+            tooltip: {
+              backgroundColor: '#faf9f5',
+              titleColor: '#2a2520',
+              bodyColor: '#7a7060',
+              borderColor: '#e8e4d8',
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: ctx => `${ctx.dataset.label || ''}: ${yUnit}${fmt(ctx.parsed.y)}`,
+              },
+            },
           },
-          x: {
-            stacked,
-            grid: { display: false },
-            ticks: { font: { size: xLabelSize }, color: '#7a7060', maxRotation: xMaxRotation, autoSkip: xAutoSkip, crossAlign: 'center' },
+          scales: {
+            y: {
+              beginAtZero: true,
+              stacked,
+              grid: { color: '#e8e4d8' },
+              ticks: {
+                font: { family: "ui-monospace, monospace", size: 11 },
+                color: '#9a9080',
+                padding: 12,
+                crossAlign: 'near',
+                callback: v => {
+                  if (!v) return '0';
+                  if (Math.abs(v) >= 1000000) return (v / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+                  if (Math.abs(v) >= 1000) return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+                  return v;
+                },
+              },
+            },
+            x: {
+              stacked,
+              offset: true,
+              alignToPixels: true,
+              grid: { display: false, offset: true },
+              ticks: {
+                font: { family: "Bai Jamjuree, sans-serif", size: xLabelSize },
+                color: '#7a7060',
+                maxRotation: xMaxRotation,
+                autoSkip: xAutoSkip,
+                align: 'center',
+              },
+            },
           },
+          layout: { padding: { top: 24, left: 16, right: 16, bottom: 8 } },
         },
-        layout: { padding: { top: 24 } },
-      },
+      });
+
+      chart.current = chartInstance;
+    };
+
+    // Use requestAnimationFrame to let Safari calculate container layout first
+    const animId = requestAnimationFrame(() => {
+      initChart();
     });
-    return () => chart.current?.destroy();
-  }, [data]);
+
+    const handleFontsLoaded = () => {
+      setFontTrigger(prev => prev + 1);
+    };
+
+    if (document.fonts) {
+      document.fonts.addEventListener('loadingdone', handleFontsLoaded);
+    }
+
+    return () => {
+      cancelAnimationFrame(animId);
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+      if (chart.current) {
+        chart.current.destroy();
+      }
+      if (document.fonts) {
+        document.fonts.removeEventListener('loadingdone', handleFontsLoaded);
+      }
+    };
+  }, [fontsReady, fontTrigger, data, labels, datasets]);
 
   if (!data?.length) return null;
-  return <canvas ref={ref} />;
+  // Use a unique key on the canvas element to force a clean backing store recreation on Safari
+  return <canvas ref={ref} key={`${labels.join(',')}_${datasets.length}_${fontTrigger}`} />;
 }
 
 export default function Reports() {
-  const [tab, setTab]             = useState('sales');
+  const [tab, setTab] = useState('sales');
   const [startDate, setStartDate] = useState(firstOfMonth());
-  const [endDate, setEndDate]     = useState(new Date().toISOString().split('T')[0]);
-  const [fuelType, setFuelType]   = useState('all');
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [fuelType, setFuelType] = useState('all');
   const [customerId, setCustomerId] = useState('all');
   const [paidFilter, setPaidFilter] = useState('all');
   const [invoiceStatus, setInvoiceStatus] = useState('all');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [invoiceDetail, setInvoiceDetail] = useState(null);
-  const [data, setData]           = useState(null);
+  const [data, setData] = useState(null);
   const [customers, setCustomers] = useState([]);
-  const [loading, setLoading]     = useState(false);
+  const [loading, setLoading] = useState(false);
   const toast = useToast();
 
   const dayCount = Math.round((new Date(endDate) - new Date(startDate)) / 86400000) + 1;
@@ -167,7 +243,7 @@ export default function Reports() {
   const closeInvoiceModal = () => { setSelectedInvoice(null); setInvoiceDetail(null); };
 
   useEffect(() => {
-    api.get('/api/customer').then(r => setCustomers(Array.isArray(r.data) ? r.data : Array.isArray(r) ? r : [])).catch(() => {});
+    api.get('/api/customer').then(r => setCustomers(Array.isArray(r.data) ? r.data : Array.isArray(r) ? r : [])).catch(() => { });
   }, []);
 
   const load = async () => {
@@ -208,7 +284,7 @@ export default function Reports() {
     }).sort((a, b) => (b.issue_date || '').localeCompare(a.issue_date || ''));
   })();
 
-  const rows    = tab === 'invoice' ? [] : (data?.data || []).slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+  const rows = tab === 'invoice' ? [] : (data?.data || []).slice().sort((a, b) => new Date(a.date) - new Date(b.date));
   const summary = data?.summary || {};
 
   /* ---------- build chart datasets ---------- */
@@ -223,12 +299,12 @@ export default function Reports() {
   if (tab === 'sales') {
     chartDatasets = [
       { label: 'ยอดขาย', data: rows.map(r => parseFloat(r.total_sales) || 0), backgroundColor: 'rgba(100, 80, 140, 0.80)' },
-      { label: 'กำไร',   data: rows.map(r => parseFloat(r.total_profit) || 0), backgroundColor: 'rgba(180, 140, 60, 0.85)' },
+      { label: 'กำไร', data: rows.map(r => parseFloat(r.total_profit) || 0), backgroundColor: 'rgba(180, 140, 60, 0.85)' },
     ];
   } else if (tab === 'fuel') {
     if (fuelType === 'all') {
       chartDatasets = [
-        { label: 'B7',  data: rows.map(r => parseFloat(r.b7_liters)  || 0), backgroundColor: FUEL_COLORS.b7 },
+        { label: 'B7', data: rows.map(r => parseFloat(r.b7_liters) || 0), backgroundColor: FUEL_COLORS.b7 },
         { label: 'E91', data: rows.map(r => parseFloat(r.e91_liters) || 0), backgroundColor: FUEL_COLORS.e91 },
         { label: 'E95', data: rows.map(r => parseFloat(r.e95_liters) || 0), backgroundColor: FUEL_COLORS.e95 },
       ];
@@ -245,7 +321,7 @@ export default function Reports() {
   const invoiceSummary = (() => {
     if (tab !== 'invoice') return {};
     const total = invoiceRows.reduce((s, i) => s + parseFloat(i.total_amount || 0), 0);
-    const paid  = invoiceRows.filter(i => i.status === 'paid').reduce((s, i) => s + parseFloat(i.total_amount || 0), 0);
+    const paid = invoiceRows.filter(i => i.status === 'paid').reduce((s, i) => s + parseFloat(i.total_amount || 0), 0);
     const unpaid = invoiceRows.filter(i => i.status === 'active').reduce((s, i) => s + parseFloat(i.remaining_amount || 0), 0);
     return { total, paid, unpaid, count: invoiceRows.length, paidCount: invoiceRows.filter(i => i.status === 'paid').length, activeCount: invoiceRows.filter(i => i.status === 'active').length };
   })();
@@ -261,7 +337,7 @@ export default function Reports() {
       else map[short].unpaid += parseFloat(inv.remaining_amount || 0);
     });
     const labels = Object.keys(map);
-    const paidArr   = labels.map(k => map[k].paid);
+    const paidArr = labels.map(k => map[k].paid);
     const unpaidArr = labels.map(k => map[k].unpaid);
     return {
       labels,
@@ -269,7 +345,7 @@ export default function Reports() {
         {
           label: 'ค้างชำระ',
           data: unpaidArr,
-          backgroundColor: 'rgba(180,120,40,0.80)',
+          backgroundColor: 'rgba(226, 29, 134, 0.21)',
           borderRadius: paidArr.map(p => p > 0 ? 0 : { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 }),
           borderSkipped: false,
           stack: 'inv',
@@ -277,7 +353,7 @@ export default function Reports() {
         {
           label: 'ชำระแล้ว',
           data: paidArr,
-          backgroundColor: 'rgba(58,120,72,0.75)',
+          backgroundColor: 'rgba(7, 107, 144, 0.75)',
           borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
           borderSkipped: false,
           stack: 'inv',
@@ -311,7 +387,7 @@ export default function Reports() {
     {
       label: 'ค้างชำระ',
       data: creditByDate.unpaidData,
-      backgroundColor: 'rgba(180,120,40,0.80)',
+      backgroundColor: 'rgba(226, 29, 134, 0.21)',
       borderRadius: creditByDate.paidData.map(p => p > 0 ? 0 : { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 }),
       borderSkipped: false,
       stack: 'credit',
@@ -319,7 +395,7 @@ export default function Reports() {
     {
       label: 'ชำระแล้ว',
       data: creditByDate.paidData,
-      backgroundColor: 'rgba(58,120,72,0.75)',
+      backgroundColor: 'rgba(7, 107, 144, 0.75)',
       borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
       borderSkipped: false,
       stack: 'credit',
@@ -393,7 +469,7 @@ export default function Reports() {
           <DatePicker value={endDate} onChange={v => setEndDate(v)} style={{ width: 130 }} />
           <button className="btn" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+              <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" />
             </svg>
             พิมพ์
           </button>
@@ -412,7 +488,7 @@ export default function Reports() {
 
       {tab === 'fuel' && rows.length > 0 && (() => {
         if (fuelType === 'all') {
-          const totalB7  = rows.reduce((s, r) => s + parseFloat(r.b7_liters  || 0), 0);
+          const totalB7 = rows.reduce((s, r) => s + parseFloat(r.b7_liters || 0), 0);
           const totalE91 = rows.reduce((s, r) => s + parseFloat(r.e91_liters || 0), 0);
           const totalE95 = rows.reduce((s, r) => s + parseFloat(r.e95_liters || 0), 0);
           const totalAll = totalB7 + totalE91 + totalE95;
@@ -427,8 +503,8 @@ export default function Reports() {
         } else {
           const fuelLabel = fuelType === 'b7' ? 'ดีเซล B7' : fuelType === 'e91' ? 'แก๊สโซฮอล์ 91' : 'แก๊สโซฮอล์ 95';
           const total = rows.reduce((s, r) => s + parseFloat(r.liters || 0), 0);
-          const avg   = rows.length > 0 ? total / rows.length : 0;
-          const max   = rows.reduce((m, r) => Math.max(m, parseFloat(r.liters || 0)), 0);
+          const avg = rows.length > 0 ? total / rows.length : 0;
+          const max = rows.reduce((m, r) => Math.max(m, parseFloat(r.liters || 0)), 0);
           return (
             <section className="metrics-strip" style={{ gridTemplateColumns: 'repeat(4, 1fr)', alignItems: 'stretch' }}>
               <MetricItem accent label={fuelLabel} value={`${fmt(total, 1)} ล.`} />
@@ -450,7 +526,7 @@ export default function Reports() {
 
       {tab === 'price' && rows.length > 0 && rows[0] && (
         <section className="metrics-strip" style={{ alignItems: 'stretch' }}>
-          <MetricItem dotColor={FC.B7}  label="ดีเซล B7 ล่าสุด"  value={`฿${rows[0].b7_sell_price}`}  sub={`ต้นทุน ฿${rows[0].b7_cost_price}`} />
+          <MetricItem dotColor={FC.B7} label="ดีเซล B7 ล่าสุด" value={`฿${rows[0].b7_sell_price}`} sub={`ต้นทุน ฿${rows[0].b7_cost_price}`} />
           <MetricItem dotColor={FC.E91} label="แก๊สโซฮอล์ 91 ล่าสุด" value={`฿${rows[0].e91_sell_price}`} sub={`ต้นทุน ฿${rows[0].e91_cost_price}`} bordered />
           <MetricItem dotColor={FC.E95} label="แก๊สโซฮอล์ 95 ล่าสุด" value={`฿${rows[0].e95_sell_price}`} sub={`ต้นทุน ฿${rows[0].e95_cost_price}`} bordered />
         </section>
@@ -468,7 +544,7 @@ export default function Reports() {
       {/* FUEL TYPE BREAKDOWN (sales tab only) */}
       {tab === 'sales' && rows.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0, borderTop: '1px solid var(--line-soft)', borderBottom: '1px solid var(--line-soft)', padding: '20px 0', marginBottom: 36 }}>
-          {[['b7','B7'],['e91','E91'],['e95','E95']].map(([ft, key], i) => (
+          {[['b7', 'B7'], ['e91', 'E91'], ['e95', 'E95']].map(([ft, key], i) => (
             <div key={ft} style={{ padding: '0 24px', borderLeft: i > 0 ? '1px solid var(--line-soft)' : undefined }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                 <span style={{ width: 10, height: 10, borderRadius: 2, background: FC[key], flexShrink: 0 }} />
@@ -492,7 +568,7 @@ export default function Reports() {
         <div className="card" style={{ marginBottom: 28 }}>
           <div className="card-header">
             <span className="card-title">
-              {tab === 'sales' ? 'ยอดขาย & กำไรรายวัน' : tab === 'fuel' ? 'ปริมาณน้ำมันรายวัน (ลิตร)' : 'ยอดเงินเชื่อรายวัน'}
+              {tab === 'sales' ? 'ยอดขาย & กำไรรายวัน (บาท)' : tab === 'fuel' ? 'ปริมาณน้ำมันรายวัน (ลิตร)' : 'ยอดเงินเชื่อรายวัน (บาท)'}
             </span>
           </div>
           <div className="chart-canvas-wrap" style={{ height: 280 }}>
@@ -508,7 +584,7 @@ export default function Reports() {
       {tab === 'invoice' && invoiceChartData && (
         <div className="card" style={{ marginBottom: 28 }}>
           <div className="card-header">
-            <span className="card-title">ยอดใบวางบิลแยกตามลูกค้า</span>
+            <span className="card-title">ยอดใบวางบิลแยกตามลูกค้า (บาท)</span>
           </div>
           <div className="chart-canvas-wrap" style={{ height: 280 }}>
             <BarChart data={invoiceRows} labels={invoiceChartData.labels} datasets={invoiceChartData.datasets} yUnit="฿" showLabels={false} stacked xLabelSize={12} xMaxRotation={0} xAutoSkip={false} />
@@ -621,7 +697,7 @@ export default function Reports() {
                       )}
                       {tab === 'fuel' && fuelType === 'all' && (
                         <>
-                          <td className="r">{parseFloat(row.b7_liters  || 0).toFixed(3)}</td>
+                          <td className="r">{parseFloat(row.b7_liters || 0).toFixed(3)}</td>
                           <td className="r">{parseFloat(row.e91_liters || 0).toFixed(3)}</td>
                           <td className="r">{parseFloat(row.e95_liters || 0).toFixed(3)}</td>
                           <td className="r" style={{ fontWeight: 600 }}>{totalLiters.toFixed(3)}</td>
@@ -673,7 +749,7 @@ export default function Reports() {
                 <tfoot>
                   <tr style={{ fontWeight: 600, borderTop: '2px solid var(--line-soft)' }}>
                     <td>รวม</td>
-                    <td className="r">{rows.reduce((s, r) => s + parseFloat(r.b7_liters  || 0), 0).toFixed(3)}</td>
+                    <td className="r">{rows.reduce((s, r) => s + parseFloat(r.b7_liters || 0), 0).toFixed(3)}</td>
                     <td className="r">{rows.reduce((s, r) => s + parseFloat(r.e91_liters || 0), 0).toFixed(3)}</td>
                     <td className="r">{rows.reduce((s, r) => s + parseFloat(r.e95_liters || 0), 0).toFixed(3)}</td>
                     <td className="r">{rows.reduce((s, r) => s + parseFloat(r.b7_liters || 0) + parseFloat(r.e91_liters || 0) + parseFloat(r.e95_liters || 0), 0).toFixed(3)}</td>
