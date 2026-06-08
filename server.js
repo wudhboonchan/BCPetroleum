@@ -81,6 +81,7 @@ const accountingRoutes = require('./routes/accounting');
 const invoiceRoutes = require('./routes/invoices');
 const inventoryRoutes = require('./routes/inventory');
 const lineRoutes = require('./routes/line');
+const tomorrowPriceRoutes = require('./routes/tomorrowPrice');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/line', lineRoutes);      // ต้องอยู่ก่อน /api (cashRoutes)
@@ -89,6 +90,7 @@ app.use('/api/daily', dailyRoutes);
 app.use('/api/credit', creditRoutes);
 app.use('/api/customer', customerRoutes);
 app.use('/api/report', reportRoutes);
+app.use('/api/tomorrow-price', tomorrowPriceRoutes);
 app.use('/api', cashRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/invoices', invoiceRoutes);

@@ -8,57 +8,47 @@ router.use(authMiddleware);
 // Get Fuel Inventory 
 router.get('/fuel', async (req, res) => {
     try {
-        // Fetch inventory targets
+        // Fetch inventory (includes reset_at)
         const { data: inventoryData, error: inventoryError } = await supabase
             .from('fuel_inventory')
             .select('*');
 
         if (inventoryError) throw inventoryError;
 
-        // Fetch total purchases from fuel_investments
-        const { data: investmentData, error: investmentError } = await supabase
-            .from('fuel_investments')
-            .select('fuel_type, liters');
-
-        if (investmentError) throw investmentError;
-
-        // Fetch total daily sales from daily_metrics
-        const { data: salesData, error: salesError } = await supabase
-            .from('daily_metrics')
-            .select('e91_liters, e95_liters, b7_liters');
-
-        if (salesError) throw salesError;
-
-        // Calculate total sales
-        let totalSales = { e91: 0, e95: 0, b7: 0 };
-        salesData.forEach(sale => {
-            totalSales.e91 += (sale.e91_liters || 0);
-            totalSales.e95 += (sale.e95_liters || 0);
-            totalSales.b7 += (sale.b7_liters || 0);
-        });
-
-        // Calculate total purchases
-        let totalPurchases = { e91: 0, e95: 0, b7: 0 };
-        investmentData.forEach(inv => {
+        // For each fuel type, only sum purchases/sales AFTER reset_at
+        const finalInventory = await Promise.all(inventoryData.map(async (inv) => {
             const ft = inv.fuel_type.toLowerCase();
-            if (totalPurchases[ft] !== undefined) {
-                totalPurchases[ft] += (inv.liters || 0);
-            }
-        });
+            const resetAt = inv.reset_at || '1970-01-01';
+            const resetDate = resetAt.slice(0, 10); // YYYY-MM-DD
 
-        // Combine into final inventory
-        const finalInventory = inventoryData.map(inv => {
-            const ft = inv.fuel_type.toLowerCase();
-            const current_liters = Number(inv.initial_liters || 0) + Number(totalPurchases[ft] || 0) - Number(totalSales[ft] || 0);
+            // Purchases after reset_at
+            const { data: purchases } = await supabase
+                .from('fuel_investments')
+                .select('liters')
+                .eq('fuel_type', ft)
+                .gte('date', resetDate);
+
+            // Sales after reset_at
+            const salesCol = ft === 'e91' ? 'e91_liters' : ft === 'e95' ? 'e95_liters' : 'b7_liters';
+            const { data: sales } = await supabase
+                .from('daily_metrics')
+                .select(salesCol)
+                .gte('date', resetDate);
+
+            const totalPurchases = (purchases || []).reduce((s, r) => s + Number(r.liters || 0), 0);
+            const totalSales     = (sales     || []).reduce((s, r) => s + Number(r[salesCol] || 0), 0);
+
+            const current_liters = Number(inv.initial_liters || 0) + totalPurchases - totalSales;
+
             return {
                 id: inv.id,
                 fuel_type: ft,
                 display_name: inv.display_name,
                 initial_liters: inv.initial_liters,
                 alert_threshold: inv.alert_threshold,
-                current_liters: current_liters
+                current_liters,
             };
-        });
+        }));
 
         res.json({ inventory: finalInventory });
     } catch (error) {
@@ -75,7 +65,10 @@ router.put('/fuel/:fuel_type', async (req, res) => {
 
         const updateData = {};
         if (alert_threshold !== undefined) updateData.alert_threshold = alert_threshold;
-        if (initial_liters !== undefined) updateData.initial_liters = initial_liters;
+        if (initial_liters !== undefined) {
+            updateData.initial_liters = initial_liters;
+            updateData.reset_at = new Date().toISOString(); // reset baseline เมื่อกรอกค่าใหม่
+        }
 
         // Ensure not empty
         if (Object.keys(updateData).length === 0) {

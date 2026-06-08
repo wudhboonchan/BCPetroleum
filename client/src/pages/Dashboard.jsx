@@ -422,11 +422,11 @@ export default function Dashboard() {
       </section>
 
       {/* OIL PRICES WIDGET */}
-      <OilPriceCard 
-        prices={oilPrices} 
-        station={oilStation} 
-        onStationChange={setOilStation} 
-        loading={oilLoading} 
+      <OilPriceCard
+        prices={oilPrices}
+        station={oilStation}
+        onStationChange={setOilStation}
+        loading={oilLoading}
       />
 
       {/* 7-DAY BARS */}
