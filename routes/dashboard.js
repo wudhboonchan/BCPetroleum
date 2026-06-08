@@ -147,4 +147,64 @@ function calculateDailyMetrics(record) {
     };
 }
 
+// In-memory cache for daily oil prices
+let oilPricesCache = {
+    data: null,
+    lastFetched: null
+};
+
+// GET /api/dashboard/oil-prices
+router.get('/oil-prices', async (req, res) => {
+    try {
+        const now = Date.now();
+        // Cache for 6 hours (21600000 ms)
+        if (oilPricesCache.data && oilPricesCache.lastFetched && (now - oilPricesCache.lastFetched < 6 * 60 * 60 * 1000)) {
+            console.log('[Oil Price Cache] Returning cached data');
+            return res.json(oilPricesCache.data);
+        }
+
+        console.log('[Oil Price Cache] Cache expired or empty. Fetching from api.chnwt.dev...');
+        const https = require('https');
+        
+        const fetchPrices = () => {
+            return new Promise((resolve, reject) => {
+                https.get('https://api.chnwt.dev/thai-oil-api/latest', (response) => {
+                    let data = '';
+                    response.on('data', (chunk) => {
+                        data += chunk;
+                    });
+                    response.on('end', () => {
+                        try {
+                            const parsed = JSON.parse(data);
+                            resolve(parsed);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    });
+                }).on('error', (err) => {
+                    reject(err);
+                });
+            });
+        };
+
+        const result = await fetchPrices();
+        if (result && result.status === 'success') {
+            oilPricesCache.data = result.response;
+            oilPricesCache.lastFetched = now;
+            return res.json(oilPricesCache.data);
+        } else {
+            throw new Error(result?.response || 'Failed to fetch prices');
+        }
+
+    } catch (error) {
+        console.error('Oil price fetch error:', error);
+        // Fallback to cache even if expired
+        if (oilPricesCache.data) {
+            console.log('[Oil Price Cache] Fetch failed. Returning expired cache data.');
+            return res.json(oilPricesCache.data);
+        }
+        res.status(500).json({ error: 'Failed to retrieve oil prices' });
+    }
+});
+
 module.exports = router;

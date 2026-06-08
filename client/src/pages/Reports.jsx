@@ -60,7 +60,7 @@ function MetricItem({ label, value, sub, bordered, accent, dotColor }) {
 }
 
 
-function BarChart({ data, labels, datasets, yUnit = '฿', showLabels = true, stacked = false, xLabelSize = 10, xMaxRotation = 45, xAutoSkip = true }) {
+function BarChart({ data, labels, datasets, yUnit = '฿', showLabels = true, stacked = false, xLabelSize = 10, xMaxRotation = 0, xAutoSkip = true }) {
   const ref = useRef(null);
   const chart = useRef(null);
   const [fontsReady, setFontsReady] = useState(false);
@@ -98,6 +98,81 @@ function BarChart({ data, labels, datasets, yUnit = '฿', showLabels = true, st
     const initChart = () => {
       if (!ref.current) return;
 
+      // Safari Thai Centering Workaround: override ctx.measureText and text rendering on the 2D context directly before Chart instantiation
+      const ctx = ref.current.getContext('2d');
+      if (ctx) {
+        const originalMeasureText = ctx.measureText;
+        const originalFillText = ctx.fillText;
+        const originalStrokeText = ctx.strokeText;
+
+        let measureSpan = document.getElementById('chart-measure-span');
+        if (!measureSpan) {
+          measureSpan = document.createElement('span');
+          measureSpan.id = 'chart-measure-span';
+          measureSpan.style.position = 'absolute';
+          measureSpan.style.visibility = 'hidden';
+          measureSpan.style.whiteSpace = 'nowrap';
+          measureSpan.style.top = '-9999px';
+          document.body.appendChild(measureSpan);
+        }
+
+        const getThaiSafariWidth = (text, font) => {
+          if (!text) return null;
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+          const hasThai = /[\u0e00-\u0e7f]/.test(text);
+          if (isSafari && hasThai) {
+            measureSpan.style.font = font;
+            measureSpan.textContent = text;
+            return measureSpan.getBoundingClientRect().width;
+          }
+          return null;
+        };
+
+        ctx.measureText = function(text) {
+          const w = getThaiSafariWidth(text, ctx.font);
+          if (w !== null) {
+            return { width: w, actualBoundingBoxLeft: 0, actualBoundingBoxRight: w };
+          }
+          return originalMeasureText.call(ctx, text);
+        };
+
+        ctx.fillText = function(text, x, y, maxWidth) {
+          const w = getThaiSafariWidth(text, ctx.font);
+          if (w !== null) {
+            const oldAlign = ctx.textAlign;
+            let targetX = x;
+            if (oldAlign === 'center') {
+              targetX = x - w / 2;
+            } else if (oldAlign === 'right') {
+              targetX = x - w;
+            }
+            ctx.textAlign = 'left';
+            originalFillText.call(ctx, text, targetX, y, maxWidth);
+            ctx.textAlign = oldAlign;
+          } else {
+            originalFillText.call(ctx, text, x, y, maxWidth);
+          }
+        };
+
+        ctx.strokeText = function(text, x, y, maxWidth) {
+          const w = getThaiSafariWidth(text, ctx.font);
+          if (w !== null) {
+            const oldAlign = ctx.textAlign;
+            let targetX = x;
+            if (oldAlign === 'center') {
+              targetX = x - w / 2;
+            } else if (oldAlign === 'right') {
+              targetX = x - w;
+            }
+            ctx.textAlign = 'left';
+            originalStrokeText.call(ctx, text, targetX, y, maxWidth);
+            ctx.textAlign = oldAlign;
+          } else {
+            originalStrokeText.call(ctx, text, x, y, maxWidth);
+          }
+        };
+      }
+
       const styledDatasets = datasets.map(ds => ({
         borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
         borderSkipped: false,
@@ -107,6 +182,20 @@ function BarChart({ data, labels, datasets, yUnit = '฿', showLabels = true, st
       chartInstance = new Chart(ref.current, {
         type: 'bar',
         data: { labels, datasets: styledDatasets },
+        plugins: [{
+          id: 'forceCenterTicks',
+          beforeDraw(chart) {
+            const xScale = chart.scales.x;
+            if (xScale && typeof xScale.getLabelItems === 'function') {
+              const items = xScale.getLabelItems();
+              for (let i = 0; i < items.length; i++) {
+                if (items[i] && items[i].options) {
+                  items[i].options.textAlign = 'center';
+                }
+              }
+            }
+          }
+        }],
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -116,7 +205,7 @@ function BarChart({ data, labels, datasets, yUnit = '฿', showLabels = true, st
               display: datasets.length > 1,
               position: 'top',
               labels: {
-                font: { family: "Bai Jamjuree, sans-serif", size: 12 },
+                font: { family: "'Bai Jamjuree', system-ui", size: 12 },
                 padding: 16,
                 usePointStyle: true,
                 pointStyle: 'rectRounded'
@@ -154,21 +243,19 @@ function BarChart({ data, labels, datasets, yUnit = '฿', showLabels = true, st
                 padding: 12,
                 crossAlign: 'near',
                 callback: v => {
-                  if (!v) return '0';
-                  if (Math.abs(v) >= 1000000) return (v / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-                  if (Math.abs(v) >= 1000) return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-                  return v;
+                  if (v === undefined || v === null) return '';
+                  if (v === 0) return '0';
+                  return v.toLocaleString('en-US');
                 },
               },
             },
             x: {
               stacked,
-              offset: true,
-              alignToPixels: true,
-              grid: { display: false, offset: true },
+              grid: { display: false },
               ticks: {
-                font: { family: "Bai Jamjuree, sans-serif", size: xLabelSize },
+                font: { family: "'Bai Jamjuree', system-ui", size: xLabelSize },
                 color: '#7a7060',
+                minRotation: 0,
                 maxRotation: xMaxRotation,
                 autoSkip: xAutoSkip,
                 align: 'center',
@@ -345,7 +432,7 @@ export default function Reports() {
         {
           label: 'ค้างชำระ',
           data: unpaidArr,
-          backgroundColor: 'rgba(226, 29, 134, 0.21)',
+          backgroundColor: 'rgba(97, 3, 53, 0.7)',
           borderRadius: paidArr.map(p => p > 0 ? 0 : { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 }),
           borderSkipped: false,
           stack: 'inv',
@@ -353,7 +440,7 @@ export default function Reports() {
         {
           label: 'ชำระแล้ว',
           data: paidArr,
-          backgroundColor: 'rgba(7, 107, 144, 0.75)',
+          backgroundColor: 'rgba(2, 88, 16, 0.75)',
           borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
           borderSkipped: false,
           stack: 'inv',
@@ -387,7 +474,7 @@ export default function Reports() {
     {
       label: 'ค้างชำระ',
       data: creditByDate.unpaidData,
-      backgroundColor: 'rgba(226, 29, 134, 0.21)',
+      backgroundColor: 'rgba(97, 3, 53, 0.7)',
       borderRadius: creditByDate.paidData.map(p => p > 0 ? 0 : { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 }),
       borderSkipped: false,
       stack: 'credit',
@@ -395,7 +482,7 @@ export default function Reports() {
     {
       label: 'ชำระแล้ว',
       data: creditByDate.paidData,
-      backgroundColor: 'rgba(7, 107, 144, 0.75)',
+      backgroundColor: 'rgba(2, 88, 16, 0.75)',
       borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
       borderSkipped: false,
       stack: 'credit',
