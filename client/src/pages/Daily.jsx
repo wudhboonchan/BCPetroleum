@@ -7,6 +7,7 @@ import { useToast } from '../components/Toast.jsx';
 import Loading from '../components/Loading.jsx';
 import Modal from '../components/Modal.jsx';
 import { fmt, thaiDate, todayStr, dateStr } from '../lib/utils.js';
+import OilPriceCard from '../components/OilPriceCard.jsx';
 
 const NOZZLE_CONFIG = [
   { id: 1, label: 'หัว 1', fuel: 'E91', pump: 1 },
@@ -157,17 +158,33 @@ export default function Daily() {
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
 
+  const [oilPrices, setOilPrices] = useState(null);
+  const [oilStation, setOilStation] = useState('ptt');
+  const [oilLoading, setOilLoading] = useState(false);
+
   const loadInventory = useCallback(async () => {
     try {
       const res = await api.get('/api/inventory/fuel');
       if (res?.inventory) {
         const sorted = [...res.inventory].sort((a, b) => {
-          const ord = { b7: 1, e91: 2, e95: 3 };
+          const ord = { b7: 1, e95: 2, e91: 3 };
           return (ord[a.fuel_type] || 9) - (ord[b.fuel_type] || 9);
         });
         setInventory(sorted);
       }
     } catch {}
+  }, []);
+
+  const loadOilPrices = useCallback(async () => {
+    try {
+      setOilLoading(true);
+      const data = await api.get('/api/dashboard/oil-prices');
+      setOilPrices(data);
+    } catch (err) {
+      console.error('Failed to load oil prices:', err);
+    } finally {
+      setOilLoading(false);
+    }
   }, []);
 
   const loadDate = useCallback(async (date) => {
@@ -229,7 +246,11 @@ export default function Daily() {
   useEffect(() => {
     loadDate(selectedDate);
     loadInventory();
-  }, [selectedDate]);
+  }, [selectedDate, loadInventory, loadDate]);
+
+  useEffect(() => {
+    loadOilPrices();
+  }, [loadOilPrices]);
 
   const hasAnomalies = () =>
     Array.from({ length: 8 }, (_, i) => {
@@ -272,8 +293,8 @@ export default function Daily() {
 
   const FUEL_CARDS = [
     { fuel: 'b7',  label: 'ดีเซล B7',      costKey: 'b7CostPrice',  sellKey: 'b7SellPrice' },
-    { fuel: 'e91', label: 'แก๊สโซฮอล์ 91', costKey: 'e91CostPrice', sellKey: 'e91SellPrice' },
     { fuel: 'e95', label: 'แก๊สโซฮอล์ 95', costKey: 'e95CostPrice', sellKey: 'e95SellPrice' },
+    { fuel: 'e91', label: 'แก๊สโซฮอล์ 91', costKey: 'e91CostPrice', sellKey: 'e91SellPrice' },
   ];
 
   return (
@@ -392,6 +413,14 @@ export default function Daily() {
           )}
         </div>
       </section>
+
+      {/* OIL PRICES WIDGET */}
+      <OilPriceCard 
+        prices={oilPrices} 
+        station={oilStation} 
+        onStationChange={setOilStation} 
+        loading={oilLoading} 
+      />
 
       {/* ── FUEL PRICES — 3 cards inline ── */}
       <section style={{ marginBottom: 48 }}>
@@ -532,8 +561,8 @@ export default function Daily() {
           <tbody>
             {[
               { fuel: 'b7',  label: 'ดีเซล B7',      data: m.b7  },
-              { fuel: 'e91', label: 'แก๊สโซฮอล์ 91', data: m.e91 },
               { fuel: 'e95', label: 'แก๊สโซฮอล์ 95', data: m.e95 },
+              { fuel: 'e91', label: 'แก๊สโซฮอล์ 91', data: m.e91 },
             ].map(({ fuel, label, data }) => (
               <tr key={fuel}>
                 <td style={{ width: 8 }}><div className={`fuel-bar ${fuel}`} style={{ height: 18 }} /></td>
