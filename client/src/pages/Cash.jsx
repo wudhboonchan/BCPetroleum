@@ -119,14 +119,15 @@ export default function Cash() {
         setPrevClosingBalance(safeRes.prevClosingBalance || 0);
         setPrevClosingBills(safeRes.prevClosingBills || {});
         const sr = safeRes.safeRecord;
-        if (sr) {
-          // We store totals per column, not per-bill breakdown for safe
-          // opening_balance and closing_balance are stored as totals
-          setSafeCounts(Object.fromEntries(BILLS.map(b => [b.id + '_open', ''])));
+        if (sr?.closing_bills && Object.keys(sr.closing_bills).length > 0) {
+          setSafeCloseCounts(Object.fromEntries(BILLS.map(b => [b.id + '_close', sr.closing_bills[b.id] ?? ''])));
+        } else {
           setSafeCloseCounts(Object.fromEntries(BILLS.map(b => [b.id + '_close', ''])));
+        }
+        if (sr?.opening_bills && Object.keys(sr.opening_bills).length > 0) {
+          setSafeCounts(Object.fromEntries(BILLS.map(b => [b.id + '_open', sr.opening_bills[b.id] ?? ''])));
         } else {
           setSafeCounts(Object.fromEntries(BILLS.map(b => [b.id + '_open', ''])));
-          setSafeCloseCounts(Object.fromEntries(BILLS.map(b => [b.id + '_close', ''])));
         }
       } catch { /* safe not critical */ }
 
@@ -579,14 +580,22 @@ export default function Cash() {
               <tbody>
                 {BILLS.map(b => {
                   const count = parseInt(safeCloseCounts[b.id + '_close']) || 0;
+                  const locked = !!(safeRecord?.closing_balance);
                   return (
                     <tr key={b.id}>
                       <td><span style={{ fontWeight: 700, fontSize: 12, padding: '2px 8px', borderRadius: 4, background: b.color + '22', color: b.color, fontFamily: 'var(--f-mono)' }}>{b.label}</span></td>
                       <td className="r">
                         <input type="number" min="0" placeholder="0"
                           value={safeCloseCounts[b.id + '_close']}
-                          onChange={e => setSafeCloseCounts(c => ({ ...c, [b.id + '_close']: e.target.value }))}
-                          style={{ width: 80, textAlign: 'right', fontFamily: 'var(--f-mono)', border: '1px solid var(--line-soft)', borderRadius: 4, padding: '3px 8px' }}
+                          onChange={e => !locked && setSafeCloseCounts(c => ({ ...c, [b.id + '_close']: e.target.value }))}
+                          readOnly={locked}
+                          style={{
+                            width: 80, textAlign: 'right', fontFamily: 'var(--f-mono)',
+                            border: '1px solid var(--line-soft)', borderRadius: 4, padding: '3px 8px',
+                            background: locked ? 'var(--bg-deep)' : undefined,
+                            color: locked ? 'var(--ink-3)' : undefined,
+                            cursor: locked ? 'default' : undefined,
+                          }}
                         />
                       </td>
                       <td className="r mono" style={{ color: count > 0 ? 'var(--ink)' : 'var(--ink-4)' }}>฿{fmt(count * b.value)}</td>
@@ -599,16 +608,25 @@ export default function Cash() {
               <span style={{ fontWeight: 600, fontSize: 13 }}>รวมปิดเซฟ</span>
               <span className="mono" style={{ fontWeight: 700, fontSize: 20 }}>฿{fmt(safeCloseTotal)}</span>
             </div>
-            {safeRecord && (
-              <div style={{ marginBottom: 12, fontSize: 12, color: 'var(--ink-4)', textAlign: 'right' }}>บันทึกแล้ว: ฿{fmt(safeRecord.closing_balance)}</div>
-            )}
+            {safeRecord?.closing_balance ? (
+              <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 12, color: '#27ae60', fontWeight: 500 }}>✓ บันทึกแล้ว</span>
+                <button type="button" onClick={() => setSafeRecord(r => ({ ...r, closing_balance: 0 }))}
+                  style={{ fontSize: 11, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                  แก้ไข
+                </button>
+              </div>
+            ) : null}
             <button
               type="button"
               className="btn btn-primary w-full"
-              disabled={safeSubmitting}
+              disabled={safeSubmitting || !!(safeRecord?.closing_balance)}
               onClick={handleSafeSave}
-              style={{ fontSize: 14, padding: '12px 0', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
-              {safeSubmitting ? 'กำลังบันทึก…' : 'บันทึกยอดเซฟวันนี้'}
+              style={{
+                fontSize: 14, padding: '12px 0', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center',
+                opacity: safeRecord?.closing_balance ? 0.45 : 1,
+              }}>
+              {safeSubmitting ? 'กำลังบันทึก…' : safeRecord?.closing_balance ? `บันทึกแล้ว ฿${fmt(safeRecord.closing_balance)}` : 'บันทึกยอดเซฟวันนี้'}
             </button>
           </div>
 
