@@ -21,24 +21,25 @@ router.get('/fuel', async (req, res) => {
             const resetAt = inv.reset_at || '1970-01-01';
             const resetDate = resetAt.slice(0, 10); // YYYY-MM-DD
 
-            // นับเฉพาะวันถัดจาก reset (initial_liters = ยอด ณ ตอนนี้รวมวันนี้แล้ว)
+            // initial_liters = ยอดก่อนน้ำมันใหม่มาถึง → นับ purchases ตั้งแต่วัน reset เลย
+            // แต่ sales นับตั้งแต่วันถัดไป (initial_liters วัด ณ ปลายวัน รวมยอดขายวันนั้นแล้ว)
             const nextDay = new Date(resetDate);
             nextDay.setDate(nextDay.getDate() + 1);
-            const afterDate = nextDay.toISOString().slice(0, 10);
+            const salesAfterDate = nextDay.toISOString().slice(0, 10);
 
-            // Purchases after reset date
+            // Purchases from reset date (same day counts — delivery recorded on same day as calibration)
             const { data: purchases } = await supabase
                 .from('fuel_investments')
                 .select('liters')
                 .eq('fuel_type', ft)
-                .gte('date', afterDate);
+                .gte('date', resetDate);
 
-            // Sales after reset date
+            // Sales from day after reset (initial_liters already includes that day's sales)
             const salesCol = ft === 'e91' ? 'e91_liters' : ft === 'e95' ? 'e95_liters' : 'b7_liters';
             const { data: sales } = await supabase
                 .from('daily_metrics')
                 .select(salesCol)
-                .gte('date', afterDate);
+                .gte('date', salesAfterDate);
 
             const totalPurchases = (purchases || []).reduce((s, r) => s + Number(r.liters || 0), 0);
             const totalSales     = (sales     || []).reduce((s, r) => s + Number(r[salesCol] || 0), 0);
